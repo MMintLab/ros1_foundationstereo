@@ -9,7 +9,11 @@ from arm_robots.panda import Panda
 def record_calibration_joint_positions():
     rospy.init_node("record_calibration_positions")
 
-    panda = Panda(robot_namespace='')
+    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_1",
+                  controller_name="effort_joint_trajectory_controller_panda_1",
+                  robot_namespace='combined_panda',
+                  panda_name='panda_1',
+                  has_gripper=True)
     panda.connect()
 
     calibration_joint_positions = []

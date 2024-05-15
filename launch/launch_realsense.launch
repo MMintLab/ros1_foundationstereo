@@ -1,0 +1,25 @@
+<launch>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="apriltag_frame"
+          required="true" args="0, 0, 0.045, -0.5, 0.5, -0.5, 0.5 panda_1_ft_origin apriltag_frame"/>
+
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="camera" value="camera_1"/>
+        <arg name="serial_no" value="153122079518"/>
+        <arg name="enable_pointcloud" value="false"/>
+        <arg name="color_fps" value="15"/>
+        <arg name="color_width" value="1280"/>
+        <arg name="color_height" value="720"/>
+    </include>
+
+    <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+        <arg name="camera_name" value="/camera_1/color"/>
+        <arg name="camera_frame" value="/camera_1_color_optical_frame"/>
+        <arg name="image_topic" value="image_raw"/>
+        <arg name="node_namespace" value="apriltag_ros_continuous_node_1"/>
+        <arg name="publish_tf" value="true"/>
+        <arg name="detection_id" value="_1"/>
+    </include>
+
+
+</launch>
