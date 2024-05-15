@@ -32,10 +32,12 @@ def hacky_single_detection():
 
 def setup_panda():
     # Panda robot interface.
-    panda = Panda(robot_namespace='')
+    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_1",
+                  controller_name="effort_joint_trajectory_controller_panda_1",
+                  robot_namespace='combined_panda',
+                  panda_name='panda_1',
+                  has_gripper=False)
     panda.connect()
-    # panda.set_joint_impedance(DEFAULT_JOINT_IMPEDANCE)
-    # panda.set_cartesian_impedance(DEFAULT_CARTESIAN_IMPEDANCE)
 
     return panda
 
@@ -43,14 +45,14 @@ def setup_panda():
 def realsense_calibration(camera_id: str, calibration_joint_positions: List):
     rospy.init_node("realsense_calibration")
     panda = setup_panda()
-    calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="world")
+    calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="base")
 
-    panda.plan_to_joint_config("panda_arm",
+    panda.plan_to_joint_config("panda_1",
                                [-0.007312947749372636, -1.3044598639153866, 0.000894327755805353, -2.6089026039848533,
                                 0.0007755669311734126, 1.3083581856224271, 0.779648284295485])
 
     for joint_position in tqdm.tqdm(calibration_joint_positions):
-        panda.plan_to_joint_config("panda_arm", joint_position)
+        panda.plan_to_joint_config("panda_1", joint_position)
         calibrator.take_mesurement()
 
         if rospy.is_shutdown():
@@ -70,7 +72,7 @@ def realsense_calibration(camera_id: str, calibration_joint_positions: List):
 def manual_realsense_calibration():
     panda = setup_panda()
 
-    calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="world")
+    calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="base")
 
     while True:
         user_in = input("Sense: [Y]/N")
