@@ -1,0 +1,6 @@
+<launch>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="calibration_frame"
+          required="true" args="0, 0, 0.035, 0, 1, 0, 0 panda_1_gripper_origin board_calibration_frame"/>
+
+</launch>
