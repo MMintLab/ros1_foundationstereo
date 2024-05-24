@@ -1,4 +1,5 @@
 <launch>
+    <arg name="apriltag_package_name" default="apriltag_ros"/>
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="apriltag_frame"
           required="true" args="0, 0, 0.045, -0.5, 0.5, -0.5, 0.5 panda_1_ft_origin apriltag_frame"/>
@@ -19,6 +20,7 @@
         <arg name="node_namespace" value="apriltag_ros_continuous_node_1"/>
         <arg name="publish_tf" value="true"/>
         <arg name="detection_id" value="_1"/>
+        <arg name="params_package_name" value="$(arg apriltag_package_name)"/>
     </include>
 
 

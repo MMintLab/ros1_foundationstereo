@@ -47,9 +47,7 @@ def realsense_calibration(camera_id: str, calibration_joint_positions: List):
     panda = setup_panda()
     calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="base")
 
-    panda.plan_to_joint_config("panda_1",
-                               [-0.007312947749372636, -1.3044598639153866, 0.000894327755805353, -2.6089026039848533,
-                                0.0007755669311734126, 1.3083581856224271, 0.779648284295485])
+    panda.plan_to_joint_config("panda_1", "ready")
 
     for joint_position in tqdm.tqdm(calibration_joint_positions):
         panda.plan_to_joint_config("panda_1", joint_position)
