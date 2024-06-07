@@ -32,10 +32,10 @@ def hacky_single_detection():
 
 def setup_panda():
     # Panda robot interface.
-    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_1",
-                  controller_name="effort_joint_trajectory_controller_panda_1",
+    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_2",
+                  controller_name="effort_joint_trajectory_controller_panda_2",
                   robot_namespace='combined_panda',
-                  panda_name='panda_1',
+                  panda_name='panda_2',
                   has_gripper=False)
     panda.connect()
 
@@ -47,10 +47,11 @@ def realsense_calibration(camera_id: str, calibration_joint_positions: List):
     panda = setup_panda()
     calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="base")
 
-    panda.plan_to_joint_config("panda_1", "ready")
+    print("Reset arm..")
+    panda.plan_to_joint_config("panda_2", "ready")
 
     for joint_position in tqdm.tqdm(calibration_joint_positions):
-        panda.plan_to_joint_config("panda_1", joint_position)
+        panda.plan_to_joint_config("panda_2", joint_position)
         calibrator.take_mesurement()
 
         if rospy.is_shutdown():

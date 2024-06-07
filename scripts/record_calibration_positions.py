@@ -10,10 +10,10 @@ from arm_robots.panda import Panda
 def record_calibration_joint_positions():
     rospy.init_node("record_calibration_positions")
 
-    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_1",
-                  controller_name="effort_joint_trajectory_controller_panda_1",
+    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_2",
+                  controller_name="effort_joint_trajectory_controller_panda_2",
                   robot_namespace='combined_panda',
-                  panda_name='panda_1',
+                  panda_name='panda_2',
                   has_gripper=False)
     panda.connect()
 
@@ -22,7 +22,7 @@ def record_calibration_joint_positions():
     while True:
         user_in = input("Collect position: [Y]/N")
         if user_in == "" or user_in == "y" or user_in == "Y":
-            joint_position = list(panda.get_state("panda_1").joint_state.position)
+            joint_position = list(panda.get_state("panda_2").joint_state.position)
             calibration_joint_positions.append(joint_position)
         else:
             break
