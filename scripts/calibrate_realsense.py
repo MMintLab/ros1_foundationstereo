@@ -30,28 +30,28 @@ def hacky_single_detection():
           (camera_pos[0], camera_pos[1], camera_pos[2], camera_orn[0], camera_orn[1], camera_orn[2], camera_orn[3]))
 
 
-def setup_panda():
+def setup_panda(panda_id: int = 1):
     # Panda robot interface.
-    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_2",
-                  controller_name="effort_joint_trajectory_controller_panda_2",
-                  robot_namespace='combined_panda',
-                  panda_name='panda_2',
+    panda = Panda(arms_controller_name=f"/combined_panda/effort_joint_trajectory_controller_panda_{panda_id}",
+                  controller_name=f"effort_joint_trajectory_controller_panda_{panda_id}",
+                  robot_namespace=f'combined_panda',
+                  panda_name=f'panda_{panda_id}',
                   has_gripper=False)
     panda.connect()
 
     return panda
 
 
-def realsense_calibration(camera_id: str, calibration_joint_positions: List):
+def realsense_calibration(panda_id: int, camera_id: str, calibration_joint_positions: List):
     rospy.init_node("realsense_calibration")
     panda = setup_panda()
     calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="base")
 
     print("Reset arm..")
-    panda.plan_to_joint_config("panda_2", "ready")
+    panda.plan_to_joint_config(f"panda_{panda_id}", "ready")
 
     for joint_position in tqdm.tqdm(calibration_joint_positions):
-        panda.plan_to_joint_config("panda_2", joint_position)
+        panda.plan_to_joint_config(f"panda_{panda_id}", joint_position)
         calibrator.take_mesurement()
 
         if rospy.is_shutdown():
@@ -92,12 +92,13 @@ def manual_realsense_calibration():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calibrate realsense")
+    parser.add_argument("panda_id", type=int, help="Which panda to use.")
     parser.add_argument("camera_id", type=str, help="Camera to calibrate.")
     parser.add_argument("cal_positions_file", type=str, help="File with calibration joint positions.")
     args = parser.parse_args()
 
     calibration_positions = mmint_utils.load_gzip_pickle(args.cal_positions_file)
-    realsense_calibration(args.camera_id, calibration_positions)
+    realsense_calibration(args.panda_id, args.camera_id, calibration_positions)
 
     # hacky_single_detection()
     # print(record_calibration_joint_positions())
