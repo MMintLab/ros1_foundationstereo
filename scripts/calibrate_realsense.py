@@ -8,8 +8,8 @@ import mmint_utils
 import rospy
 from arc_utilities.tf2wrapper import TF2Wrapper
 from arc_utilities.transformation_helper import *
-from arm_robots.panda import Panda
 from mmint_camera_utils.calibration_utils.camera_calibration import CameraApriltagCalibration
+from utils import setup_panda
 
 
 def hacky_single_detection():
@@ -28,18 +28,6 @@ def hacky_single_detection():
 
     print("%f %f %f %f %f %f %f" %
           (camera_pos[0], camera_pos[1], camera_pos[2], camera_orn[0], camera_orn[1], camera_orn[2], camera_orn[3]))
-
-
-def setup_panda(panda_id: int = 1):
-    # Panda robot interface.
-    panda = Panda(arms_controller_name=f"/combined_panda/effort_joint_trajectory_controller_panda_{panda_id}",
-                  controller_name=f"effort_joint_trajectory_controller_panda_{panda_id}",
-                  robot_namespace=f'combined_panda',
-                  panda_name=f'panda_{panda_id}',
-                  has_gripper=False)
-    panda.connect()
-
-    return panda
 
 
 def realsense_calibration(panda_id: int, camera_id: str, calibration_joint_positions: List):
