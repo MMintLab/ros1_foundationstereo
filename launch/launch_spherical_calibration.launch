@@ -1,0 +1,6 @@
+<launch>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="sphere_frame"
+          required="true" args="0, 0, 0.044, 0, 0, 0, 1 panda_1_gripper_origin sphere_frame"/>
+
+</launch>

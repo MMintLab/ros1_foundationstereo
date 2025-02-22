@@ -4,25 +4,19 @@ import os.path
 
 import mmint_utils
 import rospy
-from arm_robots.panda import Panda
+from utils import setup_panda
 
 
-def record_calibration_joint_positions():
+def record_calibration_joint_positions(panda_id: int):
     rospy.init_node("record_calibration_positions")
 
-    panda = Panda(arms_controller_name="/combined_panda/effort_joint_trajectory_controller_panda_2",
-                  controller_name="effort_joint_trajectory_controller_panda_2",
-                  robot_namespace='combined_panda',
-                  panda_name='panda_2',
-                  has_gripper=False)
-    panda.connect()
-
+    panda = setup_panda(panda_id)
     calibration_joint_positions = []
 
     while True:
         user_in = input("Collect position: [Y]/N")
         if user_in == "" or user_in == "y" or user_in == "Y":
-            joint_position = list(panda.get_state("panda_2").joint_state.position)
+            joint_position = list(panda.get_state(f"panda_{panda_id}").joint_state.position)
             calibration_joint_positions.append(joint_position)
         else:
             break
@@ -32,8 +26,11 @@ def record_calibration_joint_positions():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Record calibration positions.")
     parser.add_argument("out_fn", type=str, help="File to save positions to.")
+    parser.add_argument("--panda_id", type=int, default=1, help="Panda ID.")
     args = parser.parse_args()
-    mmint_utils.make_dir(os.path.dirname(args.out_fn))
+    out_dir = os.path.dirname(args.out_fn)
+    if out_dir != "":
+        mmint_utils.make_dir(out_dir)
 
-    cal_joint_positions = record_calibration_joint_positions()
+    cal_joint_positions = record_calibration_joint_positions(args.panda_id)
     mmint_utils.save_gzip_pickle(cal_joint_positions, args.out_fn)
