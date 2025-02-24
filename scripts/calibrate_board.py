@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     # robot.gripper.homing()
     # robot.gripper.open(wait_for_result=True)
-    # robot.gripper.grasp(0.01, 0.01, 0.08, 0.0, wait_for_result=True)
+    robot.gripper.grasp(0.01, 0.01, 0.08, 0.0, wait_for_result=True)
 
     print("Move the robot so that the calibration tool is flush with the calibration board in the front right corner.")
     input("Press enter once grasped tool is flush with calibration board...")
