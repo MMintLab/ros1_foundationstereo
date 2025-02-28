@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import copy
 
 import numpy as np
 import trimesh
@@ -29,7 +30,7 @@ def spherical_calibration(calibration_positions, panda_id: int, vis: bool = Fals
     rospy.init_node("spherical_calibration")
     sphere_size = 0.01
 
-    panda = setup_panda(panda_id, True)
+    panda = setup_panda(panda_id)
     scanner = PhoxiScanner("phoxi_camera", "PhoXi3Dscanner_sensor", "PhoXi3Dscanner_sensor")
     tf_wrapper = TF2Wrapper()
 
@@ -44,7 +45,6 @@ def spherical_calibration(calibration_positions, panda_id: int, vis: bool = Fals
 
         # Get sphere location w.r.t to robot.
         w_T_s = tf_wrapper.get_transform("panda_1_link0", "sphere_frame")
-        w_points.append(w_T_s[:3, 3])
 
         # Get approx. camera location in world frame.
         w_T_c_old = tf_wrapper.get_transform("panda_1_link0", "PhoXi3Dscanner_sensor")
@@ -80,15 +80,41 @@ def spherical_calibration(calibration_positions, panda_id: int, vis: bool = Fals
         # o3d.visualization.draw_geometries([target_pcd])
         # o3d.visualization.draw_geometries([source_pcd])
 
-        res = o3d.pipelines.registration.registration_icp(
-            source_pcd, target_pcd, 0.001, init=c_T_s,
-            estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
-            # estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
-        )
-        # s_T_w_ = res.transformation
-        # w_T_s_ = np.linalg.inv(s_T_w_)
-        c_T_s_ = res.transformation
-        c_points.append(c_T_s_[:3, 3])
+        transforms = []
+        fitness = []
+        inlier_rmse = []
+
+        # res = o3d.pipelines.registration.registration_icp(
+        #     source_pcd, target_pcd, 0.1, init=c_T_s,
+        #     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        #     # estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+        # )
+
+        for idx in range(1):
+            # c_T_s_in = copy.deepcopy(res.transformation)
+            # c_T_s_in[:3, 3] += np.random.normal(0, 0.001, 3)
+            res = o3d.pipelines.registration.registration_icp(
+                source_pcd, target_pcd, 0.001, init=c_T_s,
+                estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+                # estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+            )
+            # s_T_w_ = res.transformation
+            # w_T_s_ = np.linalg.inv(s_T_w_)
+            # c_T_s_ = res.transformation
+            # print(f"Fitness: {res.fitness}")
+            # print(f"Inlier RMSE: {res.inlier_rmse}")
+            transforms.append(res.transformation)
+            fitness.append(res.fitness)
+            inlier_rmse.append(res.inlier_rmse)
+
+        best_idx = np.argmax(fitness)
+        c_T_s_ = transforms[best_idx]
+        print(f"Fitness: {fitness[best_idx]}")
+        print(f"Inlier RMSE: {inlier_rmse[best_idx]}")
+
+        if res.inlier_rmse < 4e-4 and res.inlier_rmse > 0:
+            w_points.append(w_T_s[:3, 3])
+            c_points.append(c_T_s_[:3, 3])
 
         if vis:
             sphere_mesh_init = sphere_mesh.copy()
