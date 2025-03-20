@@ -71,7 +71,7 @@ class TransformHandler:
 
 def hacky_single_detection():
     tag_frame = 'tag_0'
-    camera_frame = 'realsense_link'
+    camera_frame = 'camera_link'
     ee_frame = 'apriltag_frame'
     world_frame = 'panda_link0'
 
