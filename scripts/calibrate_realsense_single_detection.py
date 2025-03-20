@@ -94,7 +94,7 @@ if __name__ == "__main__":
     rospy.sleep(1.0)
 
     # Try to retrieve the transform
-    handler.get_transform("apriltag_base_link", "apriltag_frame")
+    handler.get_transform("panda_end_effector", "apriltag_frame")
 
     rospy.spin()
 
