@@ -41,7 +41,7 @@ class TransformHandler:
         # Translation
         static_transform_stamped.transform.translation.x = 0
         static_transform_stamped.transform.translation.y = 0
-        static_transform_stamped.transform.translation.z = 0.045
+        static_transform_stamped.transform.translation.z = 0 # 0.045
 
         # Rotation (Quaternion)
         static_transform_stamped.transform.rotation.x = -0.5
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     # Try to retrieve the transform
     handler.get_transform("panda_end_effector", "apriltag_frame")
-
+    hacky_single_detection()
     rospy.spin()
 
 

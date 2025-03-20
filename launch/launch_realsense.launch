@@ -1,13 +1,13 @@
 <launch>
     <arg name="apriltag_package_name" default="apriltag_ros"/>
-    <arg name="apriltag_base_link" default="panda_1_ft_origin"/>
-    <arg name="camera_serial_no" default="152222071779"/>
+    <!-- <arg name="apriltag_base_link" default="panda_1_ft_origin"/> -->
+    <arg name="camera_serial_no" default="234322306167"/>
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="apriltag_frame"
-          required="true" args="0, 0, 0.045, -0.5, 0.5, -0.5, 0.5 $(arg apriltag_base_link) apriltag_frame"/>
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="apriltag_frame"
+          required="true" args="0, 0, 0.0, -0.5, 0.5, -0.5, 0.5 $(arg apriltag_base_link) apriltag_frame"/> -->
 
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-        <arg name="camera" value="camera_1"/>
+        <arg name="camera" value="camera"/>
         <arg name="serial_no" value="$(arg camera_serial_no)"/>
         <arg name="enable_pointcloud" value="false"/>
         <arg name="color_fps" value="15"/>
@@ -15,15 +15,15 @@
         <arg name="color_height" value="720"/>
     </include>
 
-    <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
-        <arg name="camera_name" value="/camera_1/color"/>
+    <!-- <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+        <arg name="camera_name" value="/realsense/color"/>
         <arg name="camera_frame" value="/camera_1_color_optical_frame"/>
         <arg name="image_topic" value="image_raw"/>
         <arg name="node_namespace" value="apriltag_ros_continuous_node_1"/>
         <arg name="publish_tf" value="true"/>
         <arg name="detection_id" value="_1"/>
         <arg name="params_package_name" value="$(arg apriltag_package_name)"/>
-    </include>
+    </include> -->
 
 
 </launch>
