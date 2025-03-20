@@ -23,7 +23,7 @@
         <arg name="node_namespace" value="apriltag_ros_continuous_node_1"/>
         <arg name="publish_tf" value="true"/>
         <arg name="detection_id" value="_1"/>
-        <arg name="params_package_name" value="$(arg apriltag_package_name)"/>
+        <!-- <arg name="params_package_name" value="$(arg apriltag_package_name)"/> -->
     </include>
 
 
