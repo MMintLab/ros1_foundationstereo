@@ -16,7 +16,7 @@ def hacky_single_detection():
     tag_frame = 'tag_0'
     camera_frame = 'camera_1_link'
     ee_frame = 'apriltag_frame'
-    world_frame = 'world'
+    world_frame = 'panda_link0'
 
     tf_wrapper = TF2Wrapper()
     c_T_tag = tf_wrapper.get_transform_msg(camera_frame, tag_frame).transform
@@ -36,7 +36,7 @@ def realsense_calibration(panda_id: int, camera_id: str, calibration_joint_posit
     calibrator = CameraApriltagCalibration(tag_id=0, calibration_frame_name="apriltag_frame", parent_frame_name="base")
 
     print("Reset arm..")
-    panda.plan_to_joint_config(f"panda_{panda_id}", "ready")
+    panda.plan_to_joint_config(f"panda", "ready")
 
     for joint_position in tqdm.tqdm(calibration_joint_positions):
         panda.plan_to_joint_config(f"panda_{panda_id}", joint_position)
