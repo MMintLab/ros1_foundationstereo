@@ -137,7 +137,6 @@ def get_depth_foundation_stereo(image_left: np.array, image_right: np.array):
 
 class StereoDepthNode():
     def __init__(self):
-        super().__init__('stereo_depth_node')
 
         # Initialize the CvBridge
         self.bridge = CvBridge()
@@ -274,7 +273,7 @@ class StereoDepthNode():
             print("[realsense] foundation stereo depth", depth_image_np.shape)
 
 def main(args=None):
-    rospy.init(args=args)
+    rospy.init_node(args=args)
 
     print("ROSNode for publishing FoundationStereo depth")
     print("Initializing...")
