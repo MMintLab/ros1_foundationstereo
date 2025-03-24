@@ -204,7 +204,7 @@ class StereoDepthNode():
 
         # Create a timer to process images periodically
         timer_period = 0.1  # seconds
-        self.timer = self.create_timer(timer_period, self.process_images)
+        # self.timer = self.create_timer(timer_period, self.process_images)
 
     def left_callback(self, msg):
         # Convert ROS Image message to a torch tensor
