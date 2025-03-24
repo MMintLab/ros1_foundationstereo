@@ -237,6 +237,39 @@ class StereoDepthNode():
         print("[realsense] depth", self.image_depth_realsense.shape)
         # print(msg.header)
 
+
+    @staticmethod
+    def quaternion_to_rotation_matrix(x, y, z, w):
+        """Convert a quaternion to a rotation matrix."""
+        norm = np.sqrt(x**2 + y**2 + z**2 + w**2)
+        x, y, z, w = x / norm, y / norm, z / norm, w / norm
+        
+        R = np.array([
+            [1 - 2*(y**2 + z**2), 2*(x*y - z*w), 2*(x*z + y*w)],
+            [2*(x*y + z*w), 1 - 2*(x**2 + z**2), 2*(y*z - x*w)],
+            [2*(x*z - y*w), 2*(y*z + x*w), 1 - 2*(x**2 + y**2)]
+        ])
+        
+        return R
+
+
+    @staticmethod
+    def create_transformation_matrix(translation, quaternion):
+        """Create a 4x4 transformation matrix from a translation vector and a quaternion."""
+        # Unpack translation and quaternion
+        tx, ty, tz = translation
+        x, y, z, w = quaternion
+        
+        # Compute the rotation matrix
+        R = StereoDepthNode.quaternion_to_rotation_matrix(x, y, z, w)
+        
+        # Create the 4x4 transformation matrix
+        T = np.eye(4)
+        T[:3, :3] = R
+        T[:3, 3] = [tx, ty, tz]
+        
+        return T
+
     def process_images(self):
         if self.image_left is not None and self.image_right is not None:
             # Call the placeholder function to compute depth
@@ -246,14 +279,9 @@ class StereoDepthNode():
             # depth_image_np = self.image_depth.numpy()
             depth_image_np = self.image_depth
 
-            extrinsics = np.array(
-                [
-                    [1.000 ,-0.006 , 0.006 , 0.015],
-                    [0.006 , 1.000 , 0.001 , 0.000],
-                    [-0.006, -0.001,  1.000,  0.00],
-                    [0.000 , 0.000 , 0.000 , 1.000],
-                ]
-            )
+
+            extrinsics =StereoDepthNode.create_transformation_matrix([1.341499, -0.063293, 0.593472],
+                                                          [-0.277419 ,0.032212 ,0.959757, 0.029443])
 
             color_intrinsics = {"fx": 908.0057373046875, "fy": 908.169677734375, "cx": 643.6474609375, "cy": 358.378}
             depth_intrinsics = {"fx":427.5676574707031, "fy":  419.1678466796875,"cx": 427.5676574707031,"cy":  242.5962677001953}
