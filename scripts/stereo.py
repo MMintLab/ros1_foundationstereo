@@ -285,7 +285,7 @@ def main(args=None):
         pass
     finally:
         # Clean up and shutdown
-        node.destroy_node()
+        # node.destroy_node()
         rospy.shutdown()
 
 if __name__ == '__main__':
