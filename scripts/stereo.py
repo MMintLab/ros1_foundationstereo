@@ -224,7 +224,7 @@ class StereoDepthNode():
         # Convert ROS Image message to a torch tensor
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'rgb8')
         self.image_color = cv_image
-        self.camera_header = self.image_color.header
+        # self.camera_header = self.image_color.header
         print("color", self.image_color.shape)
 
 
@@ -235,7 +235,7 @@ class StereoDepthNode():
         #     cv_image = 1000.0 * cv_image
         self.image_depth_realsense = cv_image
         print("[realsense] depth", self.image_depth_realsense.shape)
-        print(msg.header)
+        # print(msg.header)
 
     def process_images(self):
         if self.image_left is not None and self.image_right is not None:
