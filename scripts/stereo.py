@@ -161,7 +161,7 @@ class StereoDepthNode():
         self.subscription_rgb = rospy.Subscriber(ROSTOPIC_COLOR, Image, self.color_callback)
         self.subscription_depth = rospy.Subscriber(ROSTOPIC_RS_DEPTH, Image, self.depth_callback)
 
-        self.subscription_depth = rospy.Publisher(ROSTOPIC_FS_DEPTH, Image, queue_size=10)
+        self.publisher_depth = rospy.Publisher(ROSTOPIC_FS_DEPTH, Image, queue_size=10)
 
         rospy.Timer(rospy.Duration(0.1), self.process_images)
 

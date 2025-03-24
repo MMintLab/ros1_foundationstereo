@@ -11,6 +11,7 @@
         <arg name="depth_height" value="480"/>
         <arg name="enable_infra1" value="true"/>
         <arg name="enable_infra2" value="true"/> 
+        <arg name='align_depth' value='true'/>
         <!-- <arg name="rgb_camera.enable_auto_exposure" value="false"/> -->
 
     </include>
