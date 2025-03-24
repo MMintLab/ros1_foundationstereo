@@ -278,14 +278,10 @@ def main(args=None):
     print("ROSNode for publishing FoundationStereo depth")
     print("Initializing...")
     node = StereoDepthNode()
-
     try:
-        rospy.spin(node)
+        rospy.spin()
     except KeyboardInterrupt:
-        pass
-    finally:
-        # Clean up and shutdown
-        # node.destroy_node()
+        rospy.loginfo("Shutting down stereo depth node")
         rospy.shutdown()
 
 if __name__ == '__main__':
