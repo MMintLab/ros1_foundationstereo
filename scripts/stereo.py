@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import rclpy
-from rclpy.node import Node
+import rospy
+import os
+# from rclpy.node import Node
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from cv_bridge import CvBridge
@@ -13,11 +14,11 @@ from scipy.signal import convolve2d
 import trimesh.transformations as tra
 
 # Define the topic names
-ROSTOPIC_STEREO_LEFT = "/camera_1/infra1/image_rect_raw"
-ROSTOPIC_STEREO_RIGHT = "/camera_1/infra2/image_rect_raw"
+ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"
+ROSTOPIC_STEREO_RIGHT = "/camera/infra2/image_rect_raw"
 ROSTOPIC_FS_DEPTH = "/foundation_stereo_isaac_ros/depth_raw"
-ROSTOPIC_RS_DEPTH = "/camera_1/aligned_depth_to_color/image_raw"
-ROSTOPIC_COLOR = "/camera_1/color/image_raw"
+ROSTOPIC_RS_DEPTH = "/camera/aligned_depth_to_color/image_raw"
+ROSTOPIC_COLOR = "/camera/color/image_raw"
 
 
 def align_depth_to_color(depth, depth_intrinsics, color_intrinsics, extrinsics):
@@ -108,12 +109,15 @@ def denoise_depth_with_sobel2(depth_image: np.ndarray, depth_gradient_threshold_
 
 def get_depth_foundation_stereo(image_left: np.array, image_right: np.array):
 
+    # get current file directory
+    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    save_path = os.path.join(dir_path, 'result')
 
-    left_file = "/workspaces/isaac_ros-dev/ros_ws/src/ros_manipulation_interface/tmp/image_left.png"
-    right_file = "/workspaces/isaac_ros-dev/ros_ws/src/ros_manipulation_interface/tmp/image_right.png"
-    disparity_file = "/workspaces/isaac_ros-dev/ros_ws/src/ros_manipulation_interface/tmp/image_disparity.png"
-    depth_file = "/workspaces/isaac_ros-dev/ros_ws/src/ros_manipulation_interface/tmp/image_depth.png"
-    scale = 1.0
+    left_file = os.path.join(save_path, "image_left.png")
+    right_file = os.path.join(save_path, "image_right.png") 
+    disparity_file = os.path.join(save_path, "image_disparity.png") 
+    depth_file = os.path.join(save_path, "image_depth.png") 
+
     from PIL import Image
     Image.fromarray(image_left).convert('RGB').save(left_file)
     Image.fromarray(image_right).convert('RGB').save(right_file)
@@ -126,13 +130,14 @@ def get_depth_foundation_stereo(image_left: np.array, image_right: np.array):
          0.0, 634.7092895507812, 353.44158935546875,
          0.0, 0.0, 1.0]
     ).reshape(3,3)
-
+    
+    scale = 1.0
     K[:2] *= scale
     depth = K[0, 0] * baseline / (disparity)
     depth = denoise_depth_with_sobel2(depth)
     return depth
 
-class StereoDepthNode(Node):
+class StereoDepthNode():
     def __init__(self):
         super().__init__('stereo_depth_node')
 
@@ -146,41 +151,59 @@ class StereoDepthNode(Node):
         self.image_depth_realsense = None
         self.image_color = None
 
-        # Create subscribers
-        self.subscription_left = self.create_subscription(
-            Image,
-            ROSTOPIC_STEREO_LEFT,
-            self.left_callback,
-            10)
-        self.subscription_left  # Prevent unused variable warning
+        rospy.init_node('stereo_depth_node', anonymous=True)
 
-        self.subscription_right = self.create_subscription(
-            Image,
-            ROSTOPIC_STEREO_RIGHT,
-            self.right_callback,
-            10)
-        self.subscription_right  # Prevent unused variable warning
+        self.bridge = CvBridge()
+        self.image_left = None
+        self.image_right = None
+        self.image_depth_realsense = None
+        self.image_color = None
 
-        self.subscription_rgb = self.create_subscription(
-            Image,
-            ROSTOPIC_COLOR,
-            self.color_callback,
-            20)
-        self.subscription_rgb  # Prevent unused variable warning
+        self.subscription_left = rospy.Subscriber(ROSTOPIC_STEREO_LEFT, Image, self.left_callback)
+        self.subscription_right = rospy.Subscriber(ROSTOPIC_STEREO_RIGHT, Image, self.right_callback)
+        self.subscription_rgb = rospy.Subscriber(ROSTOPIC_COLOR, Image, self.color_callback)
+        self.subscription_depth = rospy.Subscriber(ROSTOPIC_RS_DEPTH, Image, self.depth_callback)
+
+        self.subscription_depth = rospy.Publisher(ROSTOPIC_FS_DEPTH, Image, queue_size=10)
+
+        rospy.Timer(rospy.Duration(0.1), self.process_images)
 
 
-        self.subscription_depth = self.create_subscription(
-            Image,
-            ROSTOPIC_RS_DEPTH,
-            self.depth_callback,
-            20)
-        self.subscription_depth  # Prevent unused variable warning
+        # # Create subscribers
+        # self.subscription_left = self.create_subscription(
+        #     Image,
+        #     ROSTOPIC_STEREO_LEFT,
+        #     self.left_callback,
+        #     10)
+        # self.subscription_left  # Prevent unused variable warning
 
-        # Create publisher
-        self.publisher_depth = self.create_publisher(
-            Image,
-            ROSTOPIC_FS_DEPTH,
-            10)
+        # self.subscription_right = self.create_subscription(
+        #     Image,
+        #     ROSTOPIC_STEREO_RIGHT,
+        #     self.right_callback,
+        #     10)
+        # self.subscription_right  # Prevent unused variable warning
+
+        # self.subscription_rgb = self.create_subscription(
+        #     Image,
+        #     ROSTOPIC_COLOR,
+        #     self.color_callback,
+        #     20)
+        # self.subscription_rgb  # Prevent unused variable warning
+
+
+        # self.subscription_depth = self.create_subscription(
+        #     Image,
+        #     ROSTOPIC_RS_DEPTH,
+        #     self.depth_callback,
+        #     20)
+        # self.subscription_depth  # Prevent unused variable warning
+
+        # # Create publisher
+        # self.publisher_depth = self.create_publisher(
+        #     Image,
+        #     ROSTOPIC_FS_DEPTH,
+        #     10)
 
         # Create a timer to process images periodically
         timer_period = 0.1  # seconds
@@ -253,20 +276,20 @@ class StereoDepthNode(Node):
             print("[realsense] foundation stereo depth", depth_image_np.shape)
 
 def main(args=None):
-    rclpy.init(args=args)
+    rospy.init(args=args)
 
     print("ROSNode for publishing FoundationStereo depth")
     print("Initializing...")
     node = StereoDepthNode()
 
     try:
-        rclpy.spin(node)
+        rospy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
         # Clean up and shutdown
         node.destroy_node()
-        rclpy.shutdown()
+        rospy.shutdown()
 
 if __name__ == '__main__':
     main()
