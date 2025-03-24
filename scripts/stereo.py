@@ -273,7 +273,7 @@ class StereoDepthNode():
             print("[realsense] foundation stereo depth", depth_image_np.shape)
 
 def main(args=None):
-    rospy.init_node(args=args)
+    # rospy.init_node(args=args)
 
     print("ROSNode for publishing FoundationStereo depth")
     print("Initializing...")
