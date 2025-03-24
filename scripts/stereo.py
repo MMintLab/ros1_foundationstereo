@@ -6,10 +6,8 @@ import os
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from cv_bridge import CvBridge
-import torch
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 from scipy.signal import convolve2d
 import trimesh.transformations as tra
 
@@ -130,7 +128,7 @@ def get_depth_foundation_stereo(image_left: np.array, image_right: np.array):
          0.0, 634.7092895507812, 353.44158935546875,
          0.0, 0.0, 1.0]
     ).reshape(3,3)
-    
+
     scale = 1.0
     K[:2] *= scale
     depth = K[0, 0] * baseline / (disparity)
