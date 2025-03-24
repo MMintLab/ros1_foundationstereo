@@ -254,10 +254,9 @@ class StereoDepthNode():
                     [0.000 , 0.000 , 0.000 , 1.000],
                 ]
             )
-        # K: [427.5676574707031, 0.0, 419.1678466796875, 0.0, 427.5676574707031, 242.5962677001953, 0.0, 0.0, 1.0]
 
             color_intrinsics = {"fx": 908.0057373046875, "fy": 908.169677734375, "cx": 643.6474609375, "cy": 358.378}
-            depth_intrinsics = {"fx": 634.5676574707031, "fy": 634.1678466796875,"cx": 639.3463134765625,"cy": 353.44158935546875}
+            depth_intrinsics = {"fx":427.5676574707031, "fy":  419.1678466796875,"cx": 427.5676574707031,"cy":  242.5962677001953}
 
             depth_image_np = align_depth_to_color(depth_image_np, depth_intrinsics, color_intrinsics, extrinsics)
             depth_image_np = 1000 * depth_image_np
