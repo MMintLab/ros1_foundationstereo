@@ -5,7 +5,7 @@
     <arg name="camera_serial_no" default="038122250513"/>
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="apriltag_frame"
-          required="true" args="0, 0, 0, -0.5, 0.5, -0.5, 0.5 panda_end_effector apriltag_frame"/>
+          required="true" args="0, 0, 0, -0.5, 0.5, 0.5, -0.5 panda_end_effector apriltag_frame"/>
 
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="camera" value="camera"/>
