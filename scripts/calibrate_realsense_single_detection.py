@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import numpy as np
 from typing import List
 import rospy
 from arc_utilities.tf2wrapper import TF2Wrapper
@@ -83,6 +84,8 @@ def hacky_single_detection():
     w_T_c = ComposeTransforms(w_T_tag, tag_T_c)
 
     camera_pos, camera_orn = ComponentsFromTransform(w_T_c)
+    camera_pos, camera_orn = ComponentsFromTransform(np.linalg.norm(w_T_c))
+
 
     print("%f %f %f %f %f %f %f" %
           (camera_pos[0], camera_pos[1], camera_pos[2], camera_orn[0], camera_orn[1], camera_orn[2], camera_orn[3]))
