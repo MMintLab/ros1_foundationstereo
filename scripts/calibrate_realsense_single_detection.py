@@ -25,36 +25,36 @@ class TransformHandler:
         self.broadcaster = tf2_ros.StaticTransformBroadcaster()
 
         # Publish and store the transform
-        self.publish_and_store_transform()
+        # self.publish_and_store_transform()
 
-    def publish_and_store_transform(self):
-        """Publishes a static transform and stores it in the TF buffer."""
-        parent_frame = "panda_end_effector"
-        child_frame = "apriltag_frame"
+    # def publish_and_store_transform(self):
+    #     """Publishes a static transform and stores it in the TF buffer."""
+    #     parent_frame = "panda_end_effector"
+    #     child_frame = "apriltag_frame"
 
-        # Create the transform message
-        static_transform_stamped = geometry_msgs.msg.TransformStamped()
-        static_transform_stamped.header.stamp = rospy.Time.now()
-        static_transform_stamped.header.frame_id = parent_frame
-        static_transform_stamped.child_frame_id = child_frame
+    #     # Create the transform message
+    #     static_transform_stamped = geometry_msgs.msg.TransformStamped()
+    #     static_transform_stamped.header.stamp = rospy.Time.now()
+    #     static_transform_stamped.header.frame_id = parent_frame
+    #     static_transform_stamped.child_frame_id = child_frame
 
-        # Translation
-        static_transform_stamped.transform.translation.x = 0
-        static_transform_stamped.transform.translation.y = 0
-        static_transform_stamped.transform.translation.z = 0 # 0.045
+    #     # Translation
+    #     static_transform_stamped.transform.translation.x = 0
+    #     static_transform_stamped.transform.translation.y = 0
+    #     static_transform_stamped.transform.translation.z = 0 # 0.045
 
-        # Rotation (Quaternion)
-        static_transform_stamped.transform.rotation.x = -0.5
-        static_transform_stamped.transform.rotation.y = 0.5
-        static_transform_stamped.transform.rotation.z = -0.5
-        static_transform_stamped.transform.rotation.w = 0.5
+    #     # Rotation (Quaternion)
+    #     static_transform_stamped.transform.rotation.x = -0.5
+    #     static_transform_stamped.transform.rotation.y = 0.5
+    #     static_transform_stamped.transform.rotation.z = -0.5
+    #     static_transform_stamped.transform.rotation.w = 0.5
 
-        # Publish the transform
-        self.broadcaster.sendTransform(static_transform_stamped)
-        rospy.loginfo(f"Published static transform: {parent_frame} -> {child_frame}")
+    #     # Publish the transform
+    #     self.broadcaster.sendTransform(static_transform_stamped)
+    #     rospy.loginfo(f"Published static transform: {parent_frame} -> {child_frame}")
 
-        # Manually set the transform in the buffer
-        self.tf_buffer.set_transform(static_transform_stamped, "default_authority")
+    #     # Manually set the transform in the buffer
+    #     self.tf_buffer.set_transform(static_transform_stamped, "default_authority")
 
     def get_transform(self, target_frame, source_frame):
         """Looks up the transform from source_frame to target_frame."""
