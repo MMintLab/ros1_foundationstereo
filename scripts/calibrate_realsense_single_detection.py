@@ -55,9 +55,9 @@ def hacky_single_detection():
     tag_T_c = tf_wrapper.get_transform_msg(tag_frame, camera_frame).transform
     tag_T_w = tf_wrapper.get_transform_msg(ee_frame, world_frame).transform
     tag_T_c = InvertTransform(c_T_tag)
-    w_T_c = ComposeTransforms(c_T_tag, tag_T_w)
+    c_T_w = ComposeTransforms(c_T_tag, tag_T_w)
 
-    camera_pos, camera_orn = ComponentsFromTransform(w_T_c)
+    camera_pos, camera_orn = ComponentsFromTransform(c_T_w)
 
     print("%f %f %f %f %f %f %f" %
           (camera_pos[0], camera_pos[1], camera_pos[2], camera_orn[0], camera_orn[1], camera_orn[2], camera_orn[3]))

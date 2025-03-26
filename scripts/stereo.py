@@ -2,14 +2,17 @@
 
 import rospy
 import os
-# from rclpy.node import Node
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from cv_bridge import CvBridge
 import numpy as np
+import torch
 import cv2
 from scipy.signal import convolve2d
 import trimesh.transformations as tra
+from FoundationStereo.core.utils.utils import InputPadder
+from FoundationStereoo.core.foundation_stereo import *
+import OmegaConf
 
 # Define the topic names
 ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"
@@ -105,38 +108,14 @@ def denoise_depth_with_sobel2(depth_image: np.ndarray, depth_gradient_threshold_
     new_depth_image[sobel_mag > depth_gradient_threshold_m_per_pixel] = 0
     return new_depth_image
 
-def get_depth_foundation_stereo(image_left: np.array, image_right: np.array):
 
-    # get current file directory
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    save_path = os.path.join(dir_path, 'result')
-
-    left_file = os.path.join(save_path, "image_left.png")
-    right_file = os.path.join(save_path, "image_right.png") 
-    disparity_file = os.path.join(save_path, "image_disparity.png") 
-    depth_file = os.path.join(save_path, "image_depth.png") 
-
-    from PIL import Image
-    Image.fromarray(image_left).convert('RGB').save(left_file)
-    Image.fromarray(image_right).convert('RGB').save(right_file)
-
-    disparity = np.array(disparity) # Get disparity image from FoundationStereo
-
-    baseline = 50 / 1e3
-    K = np.array(
-        [634.7092895507812, 0.0, 639.3463134765625,
-         0.0, 634.7092895507812, 353.44158935546875,
-         0.0, 0.0, 1.0]
-    ).reshape(3,3)
-
-    scale = 1.0
-    K[:2] *= scale
-    depth = K[0, 0] * baseline / (disparity)
-    depth = denoise_depth_with_sobel2(depth)
-    return depth
 
 class StereoDepthNode():
     def __init__(self):
+        ckpt_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                "FoundationStereo", "pretrained_models", "model_best_bp2.pth")
+        cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
+        self.model = FoundationStereo(cfg)
 
         # Initialize the CvBridge
         self.bridge = CvBridge()
@@ -163,48 +142,54 @@ class StereoDepthNode():
 
         self.publisher_depth = rospy.Publisher(ROSTOPIC_FS_DEPTH, Image, queue_size=10)
 
+        # Create a timer to process images periodically
         rospy.Timer(rospy.Duration(0.1), self.process_images)
 
 
-        # # Create subscribers
-        # self.subscription_left = self.create_subscription(
-        #     Image,
-        #     ROSTOPIC_STEREO_LEFT,
-        #     self.left_callback,
-        #     10)
-        # self.subscription_left  # Prevent unused variable warning
+    @staticmethod    
+    def get_depth_foundation_stereo(model, image_left: np.array, image_right: np.array):
+        H,W = image_left.shape[:2]
+        image_left_ori = image_left.copy()
 
-        # self.subscription_right = self.create_subscription(
-        #     Image,
-        #     ROSTOPIC_STEREO_RIGHT,
-        #     self.right_callback,
-        #     10)
-        # self.subscription_right  # Prevent unused variable warning
+        image_left = torch.as_tensor(image_left).cuda().float()[None].permute(0,3,1,2)
+        image_right = torch.as_tensor(image_right).cuda().float()[None].permute(0,3,1,2)
+        padder = InputPadder(image_left.shape, divis_by=32, force_square=False)
+        image_left, image_right = padder.pad(image_left, image_right)
 
-        # self.subscription_rgb = self.create_subscription(
-        #     Image,
-        #     ROSTOPIC_COLOR,
-        #     self.color_callback,
-        #     20)
-        # self.subscription_rgb  # Prevent unused variable warning
+        with torch.cuda.amp.autocast(True):
+            disp = model.forward(image_left, 
+                                      image_right,
+                                        iters=32, 
+                                        test_mode=True)
+        disp = padder.unpad(disp.float())
+        disp = disp.data.cpu().numpy().reshape(H,W)
 
 
-        # self.subscription_depth = self.create_subscription(
-        #     Image,
-        #     ROSTOPIC_RS_DEPTH,
-        #     self.depth_callback,
-        #     20)
-        # self.subscription_depth  # Prevent unused variable warning
+        # # get current file directory
+        # dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        # save_path = os.path.join(dir_path, 'result')
 
-        # # Create publisher
-        # self.publisher_depth = self.create_publisher(
-        #     Image,
-        #     ROSTOPIC_FS_DEPTH,
-        #     10)
+        # left_file = os.path.join(save_path, "image_left.png")
+        # right_file = os.path.join(save_path, "image_right.png") 
+        # disparity_file = os.path.join(save_path, "image_disparity.png") 
+        # depth_file = os.path.join(save_path, "image_depth.png") 
 
-        # Create a timer to process images periodically
-        timer_period = 0.1  # seconds
-        # self.timer = self.create_timer(timer_period, self.process_images)
+        # from PIL import Image
+        # Image.fromarray(image_left).convert('RGB').save(left_file)
+        # Image.fromarray(image_right).convert('RGB').save(right_file)
+
+        # disparity = np.array(disparity) # Get disparity image from FoundationStereo
+        config_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)), "assets")
+        with open( os.path.join(config_path, "K.txt"), 'r') as f:
+            lines = f.readlines()
+            K = np.array(list(map(float, lines[0].rstrip().split()))).astype(np.float32).reshape(3,3)
+            baseline = float(lines[1])
+        
+        scale = 1.0
+        K[:2] *= scale
+        depth = K[0, 0] * baseline / (disp)
+        depth = denoise_depth_with_sobel2(depth)
+        return depth
 
     def left_callback(self, msg):
         # Convert ROS Image message to a torch tensor
@@ -273,18 +258,18 @@ class StereoDepthNode():
     def process_images(self):
         if self.image_left is not None and self.image_right is not None:
             # Call the placeholder function to compute depth
-            self.image_depth = get_depth_foundation_stereo(self.image_left, self.image_right)
+            self.image_depth = self.get_depth_foundation_stereo(self.model, self.image_left, self.image_right)
 
             # Convert torch tensor back to numpy array
             # depth_image_np = self.image_depth.numpy()
-            depth_image_np = self.image_depth
+            depth_image_np = self.image_depth / 1000 # scale transition
 
 
             extrinsics =StereoDepthNode.create_transformation_matrix([1.341499, -0.063293, 0.593472],
                                                           [-0.277419 ,0.032212 ,0.959757, 0.029443])
 
             color_intrinsics = {"fx": 908.0057373046875, "fy": 908.169677734375, "cx": 643.6474609375, "cy": 358.378}
-            depth_intrinsics = {"fx":427.5676574707031, "fy":  419.1678466796875,"cx": 427.5676574707031,"cy":  242.5962677001953}
+            depth_intrinsics = {"fx": 427.5676574707031, "fy":  419.1678466796875,"cx": 427.5676574707031,"cy":  242.5962677001953}
 
             depth_image_np = align_depth_to_color(depth_image_np, depth_intrinsics, color_intrinsics, extrinsics)
             depth_image_np = 1000 * depth_image_np
