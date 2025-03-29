@@ -1,0 +1,3 @@
+[submodule "FoundationStereo"]
+	path = FoundationStereo
+	url = https://github.com/MMintLab/FoundationStereo.git

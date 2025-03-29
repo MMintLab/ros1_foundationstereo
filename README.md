@@ -1,8 +1,14 @@
-# MMint Franka Calibration
+# MMint FoundationStereo (ROS1)
 
-This package has helpers and code for running calibration procedures for the Franka Emika Panda robots.
+This package publishes ROS1 topics of foundation stereo depth estimation
+
 
 ## Installation
+
+### Update submodule
+`git submodule update --init --recursive`
+
+
 
 Depends on:
 
