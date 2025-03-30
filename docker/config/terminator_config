@@ -25,6 +25,7 @@
     parent = child1
     type = Terminal
   [[[terminal2]]]
+    command = $HOME/mmint_foundationstereo/scripts/stereo.py; bash
     order = 1
     parent = child1
     type = Terminal

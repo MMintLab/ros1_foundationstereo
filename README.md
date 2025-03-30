@@ -20,13 +20,13 @@ cd docker
 docker build -t foundationstereo -f build_cuda12_ros1.sh .
 ```
 3. Update Configs.
-* IPs in `docker/scripts/run_foundationstereo.sh`. In specific, just these three 
+* `camera_serial_no` in `docker/scripts/launch_realsense.sh` 
+* IPs in `docker/scripts/run_foundationstereo.sh`. In specific, these three 
 ```
   -e ROS_HOSTNAME=192.168.1.68 \
   -e ROS_IP=192.168.1.68 \
   -e ROS_MASTER_URI=http://192.168.1.68:11311/ \
 ```
-* `camera_serial_no` in `docker/scripts/launch_realsense.sh` 
 * Define the topic names in `stereo.py`
 * [Optional] Update extrinsics between the world (robot) and camera in `mmint_foundationstereo/assets/extrinsics.txt`. If you don't have one, update `scripts/stereo.py`'s `PCD_FRAME=camera_color_optical_frame`
 
