@@ -269,7 +269,7 @@ class StereoDepthNode():
             image_right = np.repeat(self.image_right[..., None], 3, axis=-1)
 
             # Reduce image size to avoid CUDA OOM
-            scale = 1  # Reduce image size by half
+            scale = 0.5  # Reduce image size by half
             image_left = cv2.resize(image_left, None, fx=scale, fy=scale)
             image_right = cv2.resize(image_right, None, fx=scale, fy=scale)
 
@@ -344,7 +344,8 @@ class StereoDepthNode():
             # Filter out invalid points (where z is 0 or negative)
             # Filter out invalid points and combine with color
             points_3d_valid = points_3d_transformed.T[:, :3]  # Take only x,y,z coordinates
-            colors = self.image_color.reshape(-1, 3) / 255.0  # Normalize color values to [0,1]
+            colors = cv2.resize(self.image_color, None, fx=scale, fy=scale)
+            colors = colors.reshape(-1, 3) / 255.0  # Normalize color values to [0,1]
             points_with_color = np.hstack((points_3d_valid, colors))  # Combine xyz with rgb
             
             # Create PointCloud2 message
