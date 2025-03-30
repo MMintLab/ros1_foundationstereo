@@ -56,7 +56,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     /opt/conda/bin/conda clean -t -i -p -y
 
 
-Install foundation stereo env. 
+# Install foundation stereo env. 
 ARG CACHEBUST=$(date +%s)
 RUN echo "Cache bust: $CACHEBUST"   
 RUN cd catkin_ws/src && \

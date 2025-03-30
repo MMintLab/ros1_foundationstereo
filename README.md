@@ -3,10 +3,10 @@
 This package publishes ROS1 topics of foundation stereo depth estimation
 
 
-## [Recommend] Docker Guide
+## [Recommended] Docker Guide
 
 ### Setup
-1. Clone ahd Set up workspace directory environment variable
+1. Clone and set up workspace directory environment variable
 ```
 git clone https://github.com/MMintLab/ros1_foundationstereo.git
 cd ros1_foundationstereo
