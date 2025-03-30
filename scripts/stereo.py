@@ -4,6 +4,8 @@ import rospy
 import os
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import PointCloud2
+from sensor_msgs import point_cloud2
 from cv_bridge import CvBridge
 import numpy as np
 import torch
@@ -20,6 +22,8 @@ ROSTOPIC_STEREO_RIGHT = "/camera/infra2/image_rect_raw"
 ROSTOPIC_FS_DEPTH = "/foundation_stereo_isaac_ros/depth_raw"
 ROSTOPIC_RS_DEPTH = "/camera/aligned_depth_to_color/image_raw"
 ROSTOPIC_COLOR = "/camera/color/image_raw"
+ROSTOPIC_POINTCLOUD = "/foundation_stereo_isaac_ros/pointcloud"
+INTRINSIC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "K.txt")
 
 
 def align_depth_to_color(depth, depth_intrinsics, color_intrinsics, extrinsics):
@@ -116,6 +120,8 @@ class StereoDepthNode():
                                 "FoundationStereo", "pretrained_models", "model_best_bp2.pth")
         cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
         self.model = FoundationStereo(cfg)
+        self.model.cuda()
+        self.model.eval()
 
         # Initialize the CvBridge
         self.bridge = CvBridge()
@@ -141,9 +147,10 @@ class StereoDepthNode():
         self.subscription_depth = rospy.Subscriber(ROSTOPIC_RS_DEPTH, Image, self.depth_callback)
 
         self.publisher_depth = rospy.Publisher(ROSTOPIC_FS_DEPTH, Image, queue_size=10)
+        self.publisher_pointcloud = rospy.Publisher(ROSTOPIC_POINTCLOUD, PointCloud2, queue_size=10)
 
         # Create a timer to process images periodically
-        rospy.Timer(rospy.Duration(0.1), self.process_images)
+        rospy.Timer(rospy.Duration(5), self.process_images)
 
 
     @staticmethod    
@@ -156,11 +163,10 @@ class StereoDepthNode():
         padder = InputPadder(image_left.shape, divis_by=32, force_square=False)
         image_left, image_right = padder.pad(image_left, image_right)
 
-        with torch.cuda.amp.autocast(True):
-            disp = model.forward(image_left, 
-                                      image_right,
-                                        iters=32, 
-                                        test_mode=True)
+        disp = model.forward(image_left, 
+                           image_right,
+                           iters=32, 
+                           test_mode=True)
         disp = padder.unpad(disp.float())
         disp = disp.data.cpu().numpy().reshape(H,W)
 
@@ -196,13 +202,13 @@ class StereoDepthNode():
         self._frame_id = msg.header.frame_id
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         self.image_left = cv_image
-        print("left infra", self.image_left.shape)
+        # print("left infra", self.image_left.shape)
 
     def right_callback(self, msg):
         # Convert ROS Image message to a torch tensor
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         self.image_right = cv_image
-        print("right infra", self.image_right.shape)
+        # print("right infra", self.image_right.shape)
 
 
     def color_callback(self, msg):
@@ -210,7 +216,7 @@ class StereoDepthNode():
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'rgb8')
         self.image_color = cv_image
         # self.camera_header = self.image_color.header
-        print("color", self.image_color.shape)
+        # print("color", self.image_color.shape)
 
 
     def depth_callback(self, msg):
@@ -219,7 +225,7 @@ class StereoDepthNode():
         # if msg.encoding == '32FC1':
         #     cv_image = 1000.0 * cv_image
         self.image_depth_realsense = cv_image
-        print("[realsense] depth", self.image_depth_realsense.shape)
+        # print("[realsense] depth", self.image_depth_realsense.shape)
         # print(msg.header)
 
 
@@ -255,39 +261,106 @@ class StereoDepthNode():
         
         return T
 
-    def process_images(self):
+    def process_images(self, event):
+        print("image left and right",self.image_left, self.image_right)
         if self.image_left is not None and self.image_right is not None:
             # Call the placeholder function to compute depth
-            self.image_depth = StereoDepthNode.get_depth_foundation_stereo(self.model, self.image_left, self.image_right)
+            image_left = np.repeat(self.image_left[..., None], 3, axis=-1)
+            image_right = np.repeat(self.image_right[..., None], 3, axis=-1)
 
-            # Convert torch tensor back to numpy array
-            # depth_image_np = self.image_depth.numpy()
-            depth_image_np = self.image_depth / 1000 # scale transition
+            # Reduce image size to avoid CUDA OOM
+            scale = 1  # Reduce image size by half
+            image_left = cv2.resize(image_left, None, fx=scale, fy=scale)
+            image_right = cv2.resize(image_right, None, fx=scale, fy=scale)
+
+            H,W = image_left.shape[:2]
+            print("ir shape", image_left.shape)
+
+            image_left_ori = image_left.copy()
+
+            # Clear CUDA cache before processing
+            torch.cuda.empty_cache()
+
+            image_left = torch.as_tensor(image_left).cuda().float()[None].permute(0,3,1,2)
+            image_right = torch.as_tensor(image_right).cuda().float()[None].permute(0,3,1,2)
+            padder = InputPadder(image_left.shape, divis_by=32, force_square=False)
+            image_left, image_right = padder.pad(image_left, image_right)
+
+            print("image_left", image_left.dtype, image_left.shape)
+            print("image_right", image_right.dtype, image_right.shape)
+
+            # Process in smaller batches if needed
+            with torch.cuda.amp.autocast(True):
+                disp = self.model.forward(image_left, image_right, iters=32, test_mode=True)
+
+            disp = padder.unpad(disp.float())
+            disp = disp.data.cpu().numpy().reshape(H,W)
+
+            # Clear tensors to free memory
+            del image_left, image_right
+            torch.cuda.empty_cache()
 
 
-            extrinsics =StereoDepthNode.create_transformation_matrix([1.341499, -0.063293, 0.593472],
-                                                          [-0.277419 ,0.032212 ,0.959757, 0.029443])
+            # get the current file directory
+            with open(INTRINSIC_PATH, 'r') as f:
+                lines = f.readlines()
+                K = np.array(list(map(float, lines[0].rstrip().split()))).astype(np.float32).reshape(3,3)
+                baseline = float(lines[1])
 
-            color_intrinsics = {"fx": 908.0057373046875, "fy": 908.169677734375, "cx": 643.6474609375, "cy": 358.378}
-            depth_intrinsics = {"fx": 427.5676574707031, "fy":  419.1678466796875,"cx": 427.5676574707031,"cy":  242.5962677001953}
+            K[:2] *= scale  # Adjust intrinsics for scaled image
+            depth = K[0,0]*baseline/disp
 
-            depth_image_np = align_depth_to_color(depth_image_np, depth_intrinsics, color_intrinsics, extrinsics)
-            depth_image_np = 1000 * depth_image_np
-            depth_image_np = depth_image_np.astype(np.uint16)
+            color_intrinsic = [381.0034484863281, 380.7884826660156, 321.30181884765625, 251.1116180419922]
+            color_intrinsic = {"fx": color_intrinsic[0], "fy": color_intrinsic[1], 
+                              "cx": color_intrinsic[2], "cy": color_intrinsic[3]}
+            depth_intrinsic = {"fx": K[0,0], "fy": K[1,1], "cx": K[0,2], "cy": K[1,2]}
 
+            extrinsics = self.create_transformation_matrix([0.059, 0.000, -0.000],[-0.001, -0.001, 0.000, 1.000])
+            extrinsics = np.linalg.inv(extrinsics)
+            
+            aligned_depth = align_depth_to_color(depth, depth_intrinsic, color_intrinsic, extrinsics)
 
-            # Convert numpy array to ROS Image message
-            depth_msg = self.bridge.cv2_to_imgmsg(depth_image_np, encoding="16UC1")
-            depth_msg.header.frame_id = "camera_1_color_optical_frame"
-            depth_msg.header.stamp = self.get_clock().now().to_msg()
+            H, W = aligned_depth.shape
+            fx_c, fy_c, cx_c, cy_c = color_intrinsic['fx'], color_intrinsic['fy'], color_intrinsic['cx'], color_intrinsic['cy']
+
+            # Generate depth pixel coordinates
+            depth_coords = np.indices((H, W)).transpose(1, 2, 0).reshape(-1, 2)
+            z = aligned_depth[depth_coords[:, 0], depth_coords[:, 1]]
+
+            # Unproject depth pixels to 3D
+            x = (depth_coords[:, 1] - cx_c) * z / fx_c
+            y = (depth_coords[:, 0] - cy_c) * z / fy_c
+            points_3d_transformed = np.vstack((x, y, z, np.ones_like(z)))  # (4, N)
+
+            # # Convert numpy array to ROS Image message
+            # depth_msg = self.bridge.cv2_to_imgmsg(aligned_depth, encoding="16UC1")
+            # depth_msg.header.frame_id = "camera_1_color_optical_frame"
+            # depth_msg.header.stamp = rospy.Time.now()
+            
             # Publish the depth image
-            self.publisher_depth.publish(depth_msg)
+            # self.publisher_depth.publish(depth_msg)
 
-            print("[realsense] foundation stereo depth", depth_image_np.shape)
+            # Create and publish point cloud message
+            # Filter out invalid points (where z is 0 or negative)
+            # Filter out invalid points and combine with color
+            points_3d_valid = points_3d_transformed.T[:, :3]  # Take only x,y,z coordinates
+            colors = self.image_color.reshape(-1, 3) / 255.0  # Normalize color values to [0,1]
+            points_with_color = np.hstack((points_3d_valid, colors))  # Combine xyz with rgb
+            
+            # Create PointCloud2 message
+            header = rospy.Header()
+            header.stamp = rospy.Time.now()
+            header.frame_id = "camera_color_optical_frame"
+            
+            # Create point cloud message
+            pc2_msg = point_cloud2.create_cloud_xyz32(header, points_3d_valid)
+            
+            # Publish point cloud
+            self.publisher_pointcloud.publish(pc2_msg)
+
+            print("[realsense] foundation stereo depth", aligned_depth.shape)
 
 def main(args=None):
-    # rospy.init_node(args=args)
-
     print("ROSNode for publishing FoundationStereo depth")
     print("Initializing...")
     node = StereoDepthNode()
