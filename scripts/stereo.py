@@ -30,6 +30,7 @@ PCD_FRAME = 'panda_link0' #"camera_color_optical_frame"
 
 class StereoDepthNode():
     def __init__(self):
+        rospy.sleep(3)
         torch.autograd.set_grad_enabled(False)
 
         ckpt_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -78,7 +79,7 @@ class StereoDepthNode():
         self.publisher_pointcloud = rospy.Publisher(ROSTOPIC_POINTCLOUD, PointCloud2, queue_size=10)
 
         # Create a timer to process images periodically
-        rospy.Timer(rospy.Duration(5), self.process_images)
+        rospy.Timer(rospy.Duration(0.5), self.process_images)
     
     def get_wTc_extrinsics(self):
         with open(EXTRINSIC_PATH, 'r') as f:
@@ -166,12 +167,13 @@ class StereoDepthNode():
             return extrinsics
             
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            print("Failed to get transform: ", e)
             rospy.logwarn(f"Failed to get transform: {e}")
             return None
 
     def process_images(self, event):
         # print("image left and right",self.image_left, self.image_right)
-
+        
         if self.image_left is not None and self.image_right is not None:
             
             scale = 1
@@ -211,10 +213,12 @@ class StereoDepthNode():
                 baseline = float(lines[1])
 
             if self.depth_intrinsic is None:
+                print("Waiting for infra1 camera info...")
                 rospy.logwarn("Waiting for infra1 camera info...")
                 return
 
             if self.color_intrinsic is None:
+                print("Waiting for color camera info...")
                 rospy.logwarn("Waiting for color camera info...")
                 return
 
@@ -231,6 +235,7 @@ class StereoDepthNode():
             # Get extrinsics from TF
             extrinsics = self.get_extrinsics()
             if extrinsics is None:
+                print("Failed to get extrinsics from TF")
                 rospy.logwarn("Failed to get extrinsics from TF")
                 return
             
@@ -292,6 +297,9 @@ class StereoDepthNode():
 
             # Publish point cloud
             self.publisher_pointcloud.publish(pc2_msg)
+        else:
+            print("Waiting for images...")
+            rospy.logwarn("Waiting for images...")
 
 
 def main(args=None):

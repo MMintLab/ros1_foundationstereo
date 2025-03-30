@@ -10,27 +10,25 @@
     [[[window0]]]
       parent = ""
       type = Window
-[[start_foundationstereo]]
-  [[[child0]]]
-    order = 0
-    parent = ""
-    type = Window
-  [[[child1]]]
-    order = 0
-    parent = child0
-    type = HPaned
-  [[[terminal1]]]
-    command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense.sh; bash
-    order = 0
-    parent = child1
-    type = Terminal
-  [[[terminal2]]]
-    command = python $HOME/mmint_foundationstereo/scripts/stereo.py; bash
-    order = 1
-    parent = child1
-    type = Terminal
-
-
+  [[start_foundationstereo]]
+    [[[child0]]]
+      order = 0
+      parent = ""
+      type = Window
+    [[[child1]]]
+      order = 0
+      parent = child0
+      type = HPaned
+    [[[terminal1]]]
+      command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense.sh; bash
+      order = 0
+      parent = child1
+      type = Terminal
+    [[[terminal2]]]
+      command = python $HOME/mmint_foundationstereo/scripts/stereo.py; bash
+      order = 1
+      parent = child1
+      type = Terminal
   [[start_frankapy_pc]]
     [[[child0]]]
       order = 0
