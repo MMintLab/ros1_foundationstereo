@@ -27,7 +27,7 @@ docker build -t foundationstereo -f build_cuda12_ros1.sh .
   -e ROS_MASTER_URI=http://192.168.1.68:11311/ \
 ```
 * `camera_serial_no` in `launch_realsense.launch` 
-
+* [Optional] Update extrinsics between the world (robot) and camera in `mmint_foundationstereo/assets/extrinsics.txt`. If you don't have one, update `scripts/stereo.py`'s `PCD_FRAME=camera_color_optical_frame`
 ### Run Foundation Stereo with ROS1
 
 ```
