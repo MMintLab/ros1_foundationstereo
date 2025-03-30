@@ -11,8 +11,8 @@ import cv2
 from scipy.signal import convolve2d
 import trimesh.transformations as tra
 from FoundationStereo.core.utils.utils import InputPadder
-from FoundationStereoo.core.foundation_stereo import *
-import OmegaConf
+from FoundationStereo.core.foundation_stereo import *
+from omegaconf import OmegaConf
 
 # Define the topic names
 ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"
@@ -258,7 +258,7 @@ class StereoDepthNode():
     def process_images(self):
         if self.image_left is not None and self.image_right is not None:
             # Call the placeholder function to compute depth
-            self.image_depth = self.get_depth_foundation_stereo(self.model, self.image_left, self.image_right)
+            self.image_depth = StereoDepthNode.get_depth_foundation_stereo(self.model, self.image_left, self.image_right)
 
             # Convert torch tensor back to numpy array
             # depth_image_np = self.image_depth.numpy()

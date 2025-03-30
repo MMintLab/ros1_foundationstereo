@@ -20,6 +20,7 @@
     parent = child0
     type = HPaned
   [[[terminal1]]]
+    command = roslaunch mmint_foundationstereo launch_realsense.launch; bash
     order = 0
     parent = child1
     type = Terminal
