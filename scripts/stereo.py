@@ -20,10 +20,10 @@ from utils import *
 # Define the topic names
 ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"
 ROSTOPIC_STEREO_RIGHT = "/camera/infra2/image_rect_raw"
-ROSTOPIC_FS_DEPTH = "/foundation_stereo_isaac_ros/depth_raw"
+ROSTOPIC_FS_DEPTH = "/foundation_stereo/depth_raw"
 ROSTOPIC_RS_DEPTH = "/camera/aligned_depth_to_color/image_raw"
 ROSTOPIC_COLOR = "/camera/color/image_raw"
-ROSTOPIC_POINTCLOUD = "/foundation_stereo_isaac_ros/pointcloud"
+ROSTOPIC_POINTCLOUD = "/foundation_stereo/pointcloud"
 INTRINSIC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "K.txt")
 EXTRINSIC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "extrinsics.txt")
 PCD_FRAME = 'panda_link0' #"camera_color_optical_frame"
