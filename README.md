@@ -5,8 +5,26 @@ This package publishes ROS1 topics of foundation stereo depth estimation
 
 ## Installation
 
+### Quick start Using Docker
+1. Build docker image
+```
+cd docker
+docker build -t foundationstereo -f build_cuda12_ros1.sh .
+```
+2. Update the IPs in `docker/scripts/run_foundationstereo.sh`. In specific, just these three 
+```
+  -e ROS_HOSTNAME=192.168.1.68 \
+  -e ROS_IP=192.168.1.68 \
+  -e ROS_MASTER_URI=http://192.168.1.68:11311/ \
+```
+
+
 ### Update submodule
-`git submodule update --init --recursive`
+```
+git submodule update --init --recursive
+cd D
+```
+
 
 
 
