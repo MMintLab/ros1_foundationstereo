@@ -19,10 +19,11 @@ docker build -t foundationstereo -f build_cuda12_ros1.sh .
 ```
 
 
-### Update submodule
+### Installation from Scratch
 ```
 git submodule update --init --recursive
-cd D
+cd FoundationStereo
+
 ```
 
 
