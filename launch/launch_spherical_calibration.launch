@@ -1,7 +1,0 @@
-<launch>
-    <arg name="spherical_base_link" default="panda_1_ft_origin"/>
-
-    <node pkg="tf2_ros" type="static_transform_publisher" name="sphere_frame"
-          required="true" args="0 0 0.04 0 0 0 1 $(arg spherical_base_link) sphere_frame"/>
-
-</launch>
