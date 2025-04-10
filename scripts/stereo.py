@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import rospy
 import os
@@ -79,7 +80,7 @@ class StereoDepthNode():
         self.publisher_pointcloud = rospy.Publisher(ROSTOPIC_POINTCLOUD, PointCloud2, queue_size=10)
 
         # Create a timer to process images periodically
-        rospy.Timer(rospy.Duration(0.5), self.process_images)
+        rospy.Timer(rospy.Duration(0.1), self.process_images)
     
     def get_wTc_extrinsics(self):
         with open(EXTRINSIC_PATH, 'r') as f:
