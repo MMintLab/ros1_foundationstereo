@@ -1,13 +1,11 @@
 #!/bin/bash
 
-if [ -z ${FRANKAPY_DIR+x} ]; then
-  opts=""
-else
-  opts="-v $FRANKAPY_DIR:/root/frankapy"
+if [ -z ${MMINT_FS_WORKSPACE_DIR+x} ]; then
+  echo "Error: MMINT_FS_WORKSPACE_DIR environment variable is not set"
+  echo "Please set MMINT_FS_WORKSPACE_DIR to your workspace directory (e.g., export MMINT_FS_WORKSPACE_DIR=/path/to/your/workspace)"
+  exit 1
 fi
 
-
-FRANKAPY_DOCKER_DIR=$( cd $( dirname ${BASH_SOURCE[0]} )/.. && pwd )
 xhost +local:root
 docker run \
   -it \
@@ -20,9 +18,9 @@ docker run \
   --gpus all \
   --net host \
   --privileged \
-  -v /home/young/gum_ws:/root/gum_ws \
-  -v $FRANKAPY_DOCKER_DIR:/root/frankapy-docker \
-  -v $FRANKAPY_DOCKER_DIR/config/terminator_config:/root/.config/terminator/config \
+  -v $MMINT_FS_WORKSPACE_DIR:/root/gum_ws \
+  -v $MMINT_FS_WORKSPACE_DIR:/root/mmint_foundationstereo \
+  -v $MMINT_FS_WORKSPACE_DIR/docker/config/terminator_config:/root/.config/terminator/config \
   -v /dev/bus/usb:/dev/bus/usb \
   $opts \
   cuda12_ros1_multi \
