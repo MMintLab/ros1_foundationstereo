@@ -26,7 +26,7 @@ docker run \
   cuda12_ros1_multi \
   bash -ci ' \
     if [ ! -z ${DISPLAY+x} ] && ( [ -z ${CONSOLE+x} ] || [ $CONSOLE == terminator ] ); then \
-      ./frankapy-docker/scripts/start_foundationstereo_multi_terminator.sh; \
+      ./mmint_foundationstereo/docker/scripts/start_foundationstereo_multi_terminator.sh; \
     elif [ -z ${CONSOLE+x} ] || [ $CONSOLE == tmux ]; then \
       ./frankapy-docker/scripts/start_frankapy_pc_tmux.sh; \
     fi; \
