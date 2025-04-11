@@ -19,6 +19,7 @@ import open3d as o3d
 from utils import *
 import threading
 import queue
+import time
 
 # Define the topic names
 ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"
@@ -77,6 +78,8 @@ class CameraProcessor:
         self.color_intrinsic = None
         self.depth_intrinsic = None
         self.extrinsics = None
+        self.pointcloud = None
+        self.pointcloud_lock = threading.Lock()
         
         # Create locks for thread safety
         self.image_left_lock = threading.Lock()
@@ -108,6 +111,20 @@ class CameraProcessor:
         extrinsics_wTc = create_transformation_matrix(extrinsics_vec[:3], extrinsics_vec[3:])
         return extrinsics_wTc
 
+    def update_extrinsics(self, new_extrinsics):
+        """Update the extrinsics file with new transformation"""
+        # Convert transformation matrix to translation and quaternion
+        # translation = new_extrinsics[:3, 3]
+        # rotation_matrix = new_extrinsics[:3, :3]
+        # quaternion = rotation_matrix_to_quaternion(rotation_matrix)
+        
+        # Write to file
+        # with open(self.extrinsic_path, 'w') as f:
+        #     f.write(f"{' '.join(map(str, translation))} {' '.join(map(str, quaternion))}\n")
+        
+        # Update the extrinsics in memory
+        self.extrinsics_wTc = new_extrinsics
+        print(f"Updated extrinsics for camera {self.camera_index}")
 
     def process_images(self):
         with self.image_left_lock, self.image_right_lock:
@@ -226,6 +243,10 @@ class CameraProcessor:
                 points_with_color['rgb'] = rgb_packed
                 pc2_msg = point_cloud2.create_cloud(header, fields, points_with_color)
 
+                # Store point cloud for ICP
+                with self.pointcloud_lock:
+                    self.pointcloud = points_3d_valid
+
                 # Publish point cloud
                 self.publisher_pointcloud.publish(pc2_msg)
                 
@@ -276,7 +297,6 @@ class CameraProcessor:
             }
 
     def get_extrinsics(self):
-
         try:
             transform = self.tf_buffer.lookup_transform(
                 f'camera_{self.camera_index}_color_optical_frame',
@@ -324,11 +344,97 @@ class StereoDepthNode():
 
         # Create a timer to process images periodically
         rospy.Timer(rospy.Duration(0.4), self.process_all_cameras)
+        
+        # Wait for point clouds and perform ICP once
+        self.perform_initial_icp()
 
     def process_all_cameras(self, event):
         # Process all cameras in parallel using threads
         for processor in self.camera_processors.values():
             processor.process_images()
+
+    def perform_initial_icp(self):
+        """Perform ICP registration once at the beginning"""
+        if len(self.camera_processors) < 2:
+            print("Need at least 2 cameras for ICP registration")
+            return
+
+        print("Waiting for point clouds from all cameras...")
+        # Wait until we have point clouds from all cameras
+        while True:
+            all_ready = True
+            for processor in self.camera_processors.values():
+                with processor.pointcloud_lock:
+                    if processor.pointcloud is None:
+                        all_ready = False
+                        break
+            if all_ready:
+                break
+            rospy.sleep(1.0)
+
+        print("All point clouds received, performing ICP registration...")
+
+        # Get the first camera as reference (not necessarily index 0)
+        ref_cam_idx = min(self.camera_processors.keys())
+        ref_processor = self.camera_processors[ref_cam_idx]
+        
+        with ref_processor.pointcloud_lock:
+            if ref_processor.pointcloud is None:
+                print(f"Waiting for reference point cloud from camera {ref_cam_idx}...")
+                return
+            ref_pcd = ref_processor.pointcloud
+
+        # Convert to Open3D point cloud
+        ref_pcd_o3d = o3d.geometry.PointCloud()
+        ref_pcd_o3d.points = o3d.utility.Vector3dVector(ref_pcd)
+
+        # Process each other camera
+        for cam_idx, processor in self.camera_processors.items():
+            if cam_idx == ref_cam_idx:  # Skip reference camera
+                continue
+
+            with processor.pointcloud_lock:
+                if processor.pointcloud is None:
+                    print(f"Waiting for point cloud from camera {cam_idx}...")
+                    continue
+                source_pcd = processor.pointcloud
+
+            # Convert to Open3D point cloud
+            source_pcd_o3d = o3d.geometry.PointCloud()
+            source_pcd_o3d.points = o3d.utility.Vector3dVector(source_pcd)
+
+            # Perform ICP registration
+            threshold = 0.02  # 2cm
+            trans_init = np.eye(4)  # Initial guess (identity matrix)
+            reg_p2p = o3d.pipelines.registration.registration_icp(
+                source_pcd_o3d, ref_pcd_o3d, threshold, trans_init,
+                o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+                o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2000)
+            )
+
+            # Get the transformation matrix from ICP (source to target)
+            icp_transform = reg_p2p.transformation
+
+            # Get the current extrinsics of the source camera
+            current_extrinsics = processor.extrinsics_wTc
+
+            # Apply the ICP transformation to the current extrinsics
+            # This gives us the new extrinsics for the source camera
+            new_extrinsics = icp_transform @ current_extrinsics 
+
+            print(f"ICP transformation for camera {cam_idx}:")
+            print(icp_transform)
+            print(f"Current extrinsics for camera {cam_idx}:")
+            print(current_extrinsics)
+            print(f"New extrinsics for camera {cam_idx}:")
+            print(new_extrinsics)
+
+            # Update the extrinsics for this camera
+            processor.update_extrinsics(new_extrinsics)
+
+            print(f"ICP registration for camera {cam_idx} completed with fitness: {reg_p2p.fitness}")
+
+        print("Initial ICP registration completed for all cameras")
 
 def main(args=None):
     print("ROSNode for publishing FoundationStereo depth")
