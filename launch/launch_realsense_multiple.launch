@@ -4,7 +4,7 @@
     <arg name="height" default="480"/>
 
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-        <arg name="camera" value="camera"/>
+        <arg name="camera" value="camera_1"/>
         <arg name="serial_no" value="$(arg camera_serial_no)"/>
         <arg name="enable_pointcloud" value="false"/>
         <arg name="color_fps" value="15"/>
@@ -23,7 +23,7 @@
     </include>
     
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-        <arg name="camera" value="camera2"/>
+        <arg name="camera" value="camera_2"/>
         <arg name="serial_no" value="332322072406"/>
         <arg name="enable_pointcloud" value="false"/>
         <arg name="color_fps" value="15"/>
