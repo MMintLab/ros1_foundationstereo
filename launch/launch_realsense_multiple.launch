@@ -24,7 +24,7 @@
     
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
         <arg name="camera" value="camera2"/>
-        <arg name="serial_no" value="246422070472"/>
+        <arg name="serial_no" value="332322072406"/>
         <arg name="enable_pointcloud" value="false"/>
         <arg name="color_fps" value="15"/>
         <arg name="depth_fps" value="15"/>
@@ -40,5 +40,4 @@
         <arg name='align_depth' value='true'/>
         <!-- <arg name="rgb_camera.enable_auto_exposure" value="false"/> -->
     </include>
-    
 </launch>

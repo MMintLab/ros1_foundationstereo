@@ -10,6 +10,25 @@
     [[[window0]]]
       parent = ""
       type = Window
+  [[start_foundationstereo_multi]]
+    [[[child0]]]
+      order = 0
+      parent = ""
+      type = Window
+    [[[child1]]]
+      order = 0
+      parent = child0
+      type = HPaned
+    [[[terminal1]]]
+      command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense_multiple.sh; bash
+      order = 0
+      parent = child1
+      type = Terminal
+    [[[terminal2]]]
+      command = python $HOME/mmint_foundationstereo/scripts/stereo_multi.py -c 0 1.py; bash
+      order = 1
+      parent = child1
+      type = Terminal
   [[start_foundationstereo]]
     [[[child0]]]
       order = 0
