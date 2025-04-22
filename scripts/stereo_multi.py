@@ -126,6 +126,29 @@ class CameraProcessor:
         self.extrinsics_wTc = new_extrinsics
         print(f"Updated extrinsics for camera {self.camera_index}")
 
+    def denoise_depth_with_sobel2(self, depth_image: np.ndarray, depth_gradient_threshold_m_per_pixel: float = 0.5) -> np.ndarray:
+        """Denoise a depth image by zeroing pixels where the Sobel gradient magnitude exceeds a threshold using SciPy's convolve2d."""
+        new_depth_image = np.copy(depth_image)
+        # Define standard Sobel kernels for the x and y gradients
+        Kx = np.array([[-1, 0, 1],
+                    [-2, 0, 2],
+                    [-1, 0, 1]], dtype=np.float32)
+        Ky = np.array([[-1, -2, -1],
+                    [ 0,  0,  0],
+                    [ 1,  2,  1]], dtype=np.float32)
+
+        # Apply convolution using mode='same' to keep the original image dimensions,
+        # and boundary='symm' for symmetric padding along the edges.
+        sobel_x = convolve2d(depth_image, Kx, mode='same', boundary='symm')
+        sobel_y = convolve2d(depth_image, Ky, mode='same', boundary='symm')
+
+        # Compute the gradient magnitude
+        sobel_mag = np.sqrt(sobel_x**2 + sobel_y**2)
+
+        # Zero out pixels where the gradient magnitude exceeds the threshold
+        new_depth_image[sobel_mag > depth_gradient_threshold_m_per_pixel] = 0
+        return new_depth_image
+
     def process_images(self):
         with self.image_left_lock, self.image_right_lock:
             if self.image_left is None or self.image_right is None:
@@ -194,7 +217,15 @@ class CameraProcessor:
                 if extrinsics is None:
                     return
                 depth = cv2.resize(depth, (W_ori, H_ori))
-                aligned_depth = align_depth_to_color(depth, depth_intrinsic, self.color_intrinsic, extrinsics)
+                # Ensure depth is 2D before denoising
+                depth_denoised = self.denoise_depth_with_sobel2(depth)
+                
+                aligned_depth = align_depth_to_color(depth_denoised, depth_intrinsic, self.color_intrinsic, extrinsics)
+
+                depth_msg = self.bridge.cv2_to_imgmsg(aligned_depth.astype(np.float32), encoding="32FC1")
+                depth_msg.header.stamp = rospy.Time.now()
+                depth_msg.header.frame_id = f"camera_{self.camera_index}_color_optical_frame"
+                self.publisher_depth.publish(depth_msg)
 
                 fx_c, fy_c, cx_c, cy_c = self.color_intrinsic['fx'], self.color_intrinsic['fy'], self.color_intrinsic['cx'], self.color_intrinsic['cy']
 
