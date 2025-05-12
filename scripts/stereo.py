@@ -15,7 +15,7 @@ from FoundationStereo.core.foundation_stereo import *
 from omegaconf import OmegaConf
 import tf2_ros
 import open3d as o3d
-from utils import *
+from mmint_foundationstereo.utils import *
 
 # Define the topic names
 ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"

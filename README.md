@@ -41,9 +41,14 @@ Make sure you are not running any cameras before running!
 
 
 ## Installation from Scratch
+This is recommended for testing out FoundationStereo without having to deal with ROS1.
+
 ```
+git clone git@github.com:MMintLab/ros1_foundationstereo.
 git submodule update --init --recursive
 cd FoundationStereo
+pip install -e .
+pip install -e FoundationStereo/
 
 ```
 
