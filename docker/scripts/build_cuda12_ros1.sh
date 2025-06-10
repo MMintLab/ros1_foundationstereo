@@ -107,8 +107,7 @@ RUN cd catkin_ws/src && \
     python -m pip install flash-attn && \
     python -m pip install -e . && \
     cd .. && \
-    python -m pip install -e . && \
-    cd .. && "
+    python -m pip install -e . "
 
     
 # Build catkin workspace.
