@@ -142,7 +142,7 @@ RUN apt-get update && apt-get upgrade -y && \
   # Clone apriltag packages
 RUN cd ~/catkin_ws/src && \
     git clone https://github.com/AprilRobotics/apriltag.git && \
-    git clone https://github.com/MMintLab/apriltag_ros.git
+    git clone -b vtt https://github.com/MMintLab/apriltag_ros.git
 
 RUN apt-get update && \
     apt-get install -y libglfw3-dev

@@ -1,4 +1,5 @@
 [global_config]
+  suppress_multiple_term_dialog = True
 [keybindings]
 [profiles]
   [[default]]
@@ -25,7 +26,7 @@
       parent = child1
       type = Terminal
     [[[terminal2]]]
-      command = conda init; conda deactivate && cd $HOME/mmint_foundationstereo && python3 $HOME/mmint_foundationstereo/scripts/calibrate_realsense_single_detection.py; bash
+      command = conda init; conda deactivate && cd $HOME/mmint_foundationstereo &&  python3 $HOME/mmint_foundationstereo/scripts/calibrate_realsense_single_detection.py; bash
       order = 1
       parent = child1
       type = Terminal
