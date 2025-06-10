@@ -10,17 +10,54 @@ RUN apt-get update && \
         python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-# Install ROS Noetic.
+# 1) install curl & gnupg
 RUN apt-get update && \
-    apt-get install -y \
-        curl \
-        lsb-release && \
-    sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' && \
-    curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ros-noetic-desktop-full && \
-    echo "source /opt/ros/noetic/setup.bash" >> $HOME/.bashrc && \
+    apt-get install -y --no-install-recommends \
+      curl \
+      gnupg2 \
+      lsb-release && \
     rm -rf /var/lib/apt/lists/*
+
+# 2) fetch & dearmor the ROS key
+RUN curl -fsSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc \
+    | gpg --dearmor \
+    > /usr/share/keyrings/ros-archive-keyring.gpg
+
+# 3) add the ROS repo (signed-by our new keyring)
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+    http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" \
+    > /etc/apt/sources.list.d/ros-latest.list
+
+# 1) Force non-interactive installs
+ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
+
+# 2) Preseed keyboard‐configuration answers
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends debconf-utils && \
+    echo "keyboard-configuration  keyboard-configuration/layoutcode select us" | debconf-set-selections && \
+    echo "keyboard-configuration  keyboard-configuration/layout select English (US)" | debconf-set-selections && \
+    echo "keyboard-configuration  keyboard-configuration/modelcode select pc105" | debconf-set-selections && \
+    echo "keyboard-configuration  keyboard-configuration/variantcode select " | debconf-set-selections && \
+    rm -rf /var/lib/apt/lists/*
+    
+# 4) now you can apt-get update and install ROS Noetic
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      ros-noetic-desktop-full && \
+    rm -rf /var/lib/apt/lists/*
+
+# # Install ROS Noetic.
+# RUN apt-get update && \
+#     apt-get install -y \
+#         curl \
+#         lsb-release && \
+#     sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' && \
+#     curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add - && \
+#     apt-get update && \
+#     DEBIAN_FRONTEND=noninteractive apt-get install -y ros-noetic-desktop-full && \
+#     echo "source /opt/ros/noetic/setup.bash" >> $HOME/.bashrc && \
+#     rm -rf /var/lib/apt/lists/*
 
 # Create catkin workspace.
 RUN mkdir -p catkin_ws/src
@@ -67,7 +104,12 @@ RUN cd catkin_ws/src && \
     /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
     conda env create -f environment.yml && \
     conda activate foundation_stereo && \
-    python -m pip install flash-attn"
+    python -m pip install flash-attn && \
+    python -m pip install -e . && \
+    cd .. && \
+    python -m pip install -e . && \
+    cd .. && "
+
     
 # Build catkin workspace.
 RUN apt-get update && \
@@ -104,6 +146,13 @@ RUN cd ~/catkin_ws/src && \
     ./bootstrap-vcpkg.sh && \
     ./vcpkg integrate install && \
     ./vcpkg install realsense2
+
+# Install arc_utilities in the background
+RUN cd && \
+    git clone https://github.com/UM-ARM-Lab/arc_utilities.git && \
+    cd arc_utilities && \
+    pip install -e . 
+
 
 # ros realsense
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}

@@ -33,7 +33,7 @@ docker run \
   $DOCKER_CUDA_IMAGE \
   bash -ci ' \
     if [ ! -z ${DISPLAY+x} ] && ( [ -z ${CONSOLE+x} ] || [ $CONSOLE == terminator ] ); then \
-      ./mmint_foundationstereo/docker/scripts/start_foundationstereo_terminator.sh; \
+      ./mmint_foundationstereo/docker/scripts/start_apriltag_calibration_terminator.sh; \
     fi; \
     bash \
   '

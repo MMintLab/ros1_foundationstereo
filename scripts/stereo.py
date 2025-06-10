@@ -2,6 +2,7 @@
 
 import rospy
 import os
+import sys
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import PointCloud2
@@ -17,16 +18,17 @@ import tf2_ros
 import open3d as o3d
 from mmint_foundationstereo.utils import *
 
-# Define the topic names
-ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"
-ROSTOPIC_STEREO_RIGHT = "/camera/infra2/image_rect_raw"
-ROSTOPIC_FS_DEPTH = "/foundation_stereo/depth_raw"
-ROSTOPIC_RS_DEPTH = "/camera/aligned_depth_to_color/image_raw"
-ROSTOPIC_COLOR = "/camera/color/image_raw"
-ROSTOPIC_POINTCLOUD = "/foundation_stereo/pointcloud"
+# Import configuration from centralized config
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config'))
+from config_vars import (
+    ROSTOPIC_STEREO_LEFT, ROSTOPIC_STEREO_RIGHT, ROSTOPIC_FS_DEPTH,
+    ROSTOPIC_RS_DEPTH, ROSTOPIC_COLOR, ROSTOPIC_POINTCLOUD,
+    PCD_FRAME, EXTRINSICS_VALUES, TIMER_DURATION, PROCESSING_SCALE
+)
+
+# Define paths using centralized config
 INTRINSIC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "K.txt")
 EXTRINSIC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "extrinsics.txt")
-PCD_FRAME = 'panda_link0' #"camera_color_optical_frame"
 
 class StereoDepthNode():
     def __init__(self):
@@ -78,13 +80,12 @@ class StereoDepthNode():
         self.publisher_depth = rospy.Publisher(ROSTOPIC_FS_DEPTH, Image, queue_size=10)
         self.publisher_pointcloud = rospy.Publisher(ROSTOPIC_POINTCLOUD, PointCloud2, queue_size=10)
 
-        # Create a timer to process images periodically
-        rospy.Timer(rospy.Duration(0.5), self.process_images)
+        # Create a timer to process images periodically using configured duration
+        rospy.Timer(rospy.Duration(TIMER_DURATION), self.process_images)
     
     def get_wTc_extrinsics(self):
-        with open(EXTRINSIC_PATH, 'r') as f:
-            lines = f.readlines()
-            extrinsics_vec = np.array(list(map(float, lines[0].rstrip().split()))).astype(np.float32)
+        # Use extrinsics from centralized config
+        extrinsics_vec = np.array(EXTRINSICS_VALUES).astype(np.float32)
         extrinsics_wTc = create_transformation_matrix(extrinsics_vec[:3], extrinsics_vec[3:])
         return extrinsics_wTc
 

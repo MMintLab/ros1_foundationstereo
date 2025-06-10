@@ -10,6 +10,25 @@
     [[[window0]]]
       parent = ""
       type = Window
+  [[start_apriltag_calibration]]
+    [[[child0]]]
+      order = 0
+      parent = ""
+      type = Window
+    [[[child1]]]
+      order = 0
+      parent = child0
+      type = HPaned
+    [[[terminal1]]]
+      command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense_calibration.sh; bash
+      order = 0
+      parent = child1
+      type = Terminal
+    [[[terminal2]]]
+      command = conda deactivate && cd $HOME/mmint_foundationstereo && python3 $HOME/mmint_foundationstereo/scripts/calibrate_realsense_single_detection.py; bash
+      order = 1
+      parent = child1
+      type = Terminal
   [[start_foundationstereo]]
     [[[child0]]]
       order = 0
@@ -25,7 +44,7 @@
       parent = child1
       type = Terminal
     [[[terminal2]]]
-      command = python $HOME/mmint_foundationstereo/scripts/stereo.py; bash
+      command = cd $HOME/mmint_foundationstereo; python $HOME/mmint_foundationstereo/scripts/stereo.py; bash
       order = 1
       parent = child1
       type = Terminal
