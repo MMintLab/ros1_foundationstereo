@@ -97,8 +97,8 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 ARG CACHEBUST=$(date +%s)
 RUN echo "Cache bust: $CACHEBUST"   
 RUN cd catkin_ws/src && \
-    git clone https://github.com/MMintLab/ros1_foundationstereo.git && \
-    cd ros1_foundationstereo && \
+    git clone https://github.com/MMintLab/ros1_foundationstereo.git mmint_foundationstereo && \
+    cd mmint_foundationstereo && \
     git submodule update --init --recursive && \
     cd FoundationStereo && \
     /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
@@ -122,7 +122,8 @@ RUN apt-get update && \
     apt-get install -y gnupg2 lsb-release software-properties-common wget
 RUN sudo apt-get update && \
     apt-get install -y autoconf automake libtool pkg-config libudev-dev
-    
+
+       
 RUN mkdir -p /etc/apt/keyrings
 RUN curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null
 RUN apt-get install apt-transport-https
@@ -138,13 +139,42 @@ RUN apt-get update && apt-get upgrade -y && \
     librealsense2-utils && \
     rm -rf /var/lib/apt/lists/*
     
-# Build librealsense2
+  # Clone apriltag packages
 RUN cd ~/catkin_ws/src && \
-    git clone https://github.com/Microsoft/vcpkg.git && \
-    cd vcpkg && \
-    ./bootstrap-vcpkg.sh && \
-    ./vcpkg integrate install && \
-    ./vcpkg install realsense2
+    git clone https://github.com/AprilRobotics/apriltag.git && \
+    git clone https://github.com/MMintLab/apriltag_ros.git
+
+RUN apt-get update && \
+    apt-get install -y libglfw3-dev
+
+
+  
+# Install rosdep dependencies
+RUN apt-get update && \
+    apt-get install -y \
+      python3-catkin-tools \
+      libusb-1.0-0-dev \
+      libudev-dev \
+      libglfw3-dev \
+      libssl-dev \
+      libgtk-3-dev \
+      nlohmann-json3-dev \
+      ros-noetic-realsense2-camera
+
+
+RUN export ROS_DISTRO=noetic && \         
+    apt-get install -y python3-rosdep && \
+    rosdep init && \
+    rosdep update
+
+RUN cd ~/catkin_ws && \
+    /bin/bash -c "source /opt/ros/noetic/setup.bash && \
+                  rosdep install --from-paths src --ignore-src -r -y --rosdistro noetic"
+
+# Finally, build everything
+RUN cd ~/catkin_ws && \
+    /bin/bash -c "source /opt/ros/noetic/setup.bash && \
+                  catkin_make_isolated"
 
 # Install arc_utilities in the background
 RUN cd && \
@@ -153,14 +183,13 @@ RUN cd && \
     pip install -e . 
 
 
+
 # ros realsense
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
 RUN apt-get update && \
     apt-get install ros-noetic-realsense2-camera -y
 
-RUN rm -r ~/catkin_ws/src/ros1_foundationstereo 
-
 # Optionally, set up the shell to activate the environment automatically.
 RUN echo "source /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
 RUN echo "conda activate foundation_stereo" >> ~/.bashrc
-RUN echo "source /root/catkin_ws/devel/setup.bash" >> ~/.bashrc
+RUN echo "source /root/catkin_ws/devel_isolated/setup.bash" >> ~/.bashrc

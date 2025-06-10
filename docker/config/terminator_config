@@ -20,12 +20,12 @@
       parent = child0
       type = HPaned
     [[[terminal1]]]
-      command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense_calibration.sh; bash
+      command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense.sh launch_realsense_calibration.launch; bash
       order = 0
       parent = child1
       type = Terminal
     [[[terminal2]]]
-      command = conda deactivate && cd $HOME/mmint_foundationstereo && python3 $HOME/mmint_foundationstereo/scripts/calibrate_realsense_single_detection.py; bash
+      command = conda init; conda deactivate && cd $HOME/mmint_foundationstereo && python3 $HOME/mmint_foundationstereo/scripts/calibrate_realsense_single_detection.py; bash
       order = 1
       parent = child1
       type = Terminal
@@ -39,7 +39,7 @@
       parent = child0
       type = HPaned
     [[[terminal1]]]
-      command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense.sh; bash
+      command = $HOME/mmint_foundationstereo/docker/scripts/launch_realsense.sh launch_realsense.launch; bash
       order = 0
       parent = child1
       type = Terminal

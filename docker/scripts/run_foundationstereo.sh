@@ -25,12 +25,11 @@ docker run \
   --gpus all \
   --net host \
   --privileged \
-  -v $MMINT_FS_WORKSPACE_DIR:/root/gum_ws \
   -v $MMINT_FS_WORKSPACE_DIR:/root/mmint_foundationstereo \
   -v $MMINT_FS_WORKSPACE_DIR/docker/config/terminator_config:/root/.config/terminator/config \
   -v /dev/bus/usb:/dev/bus/usb \
   $opts \
-  $DOCKER_CUDA_IMAGE \
+  foundationstereo \
   bash -ci ' \
     if [ ! -z ${DISPLAY+x} ] && ( [ -z ${CONSOLE+x} ] || [ $CONSOLE == terminator ] ); then \
       ./mmint_foundationstereo/docker/scripts/start_foundationstereo_terminator.sh; \
