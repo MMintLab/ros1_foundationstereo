@@ -2,7 +2,7 @@
 
 # Source configuration variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$SCRIPT_DIR/../config"
+CONFIG_DIR="$SCRIPT_DIR/../../config"
 
 # Load configuration variables
 eval "$(python3 $CONFIG_DIR/export_config.py --shell)"
