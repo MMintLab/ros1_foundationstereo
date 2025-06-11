@@ -3,6 +3,7 @@
 import rospy
 import os
 import sys
+import pyrealsense2 as rs
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import PointCloud2
@@ -32,6 +33,21 @@ EXTRINSIC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__
 
 class StereoDepthNode():
     def __init__(self):
+        # Turn off RealSense emitter
+        ctx = rs.context()
+        devices = ctx.query_devices()
+        
+        if len(devices) == 0:
+            rospy.logwarn("No RealSense devices found")
+        else:
+            device = devices[0]
+            depth_sensor = device.first_depth_sensor()
+            if depth_sensor.supports(rs.option.emitter_enabled):
+                depth_sensor.set_option(rs.option.emitter_enabled, 0)
+                rospy.loginfo("RealSense emitter turned off")
+            else:
+                rospy.logwarn("Device does not support emitter control")
+
         rospy.sleep(3)
         torch.autograd.set_grad_enabled(False)
 

@@ -8,10 +8,21 @@ fi
 
 # Source configuration variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$SCRIPT_DIR/../config"
+CONFIG_DIR="$SCRIPT_DIR/../../config"
 
 # Load configuration variables
 eval "$(python3 $CONFIG_DIR/export_config.py --shell)"
+
+# Ensure ROS networking variables are set
+if [ -z "$ROS_HOSTNAME" ]; then
+  export ROS_HOSTNAME=$network_ros_hostname
+fi
+if [ -z "$ROS_IP" ]; then
+  export ROS_IP=$network_ros_ip
+fi
+if [ -z "$ROS_MASTER_URI" ]; then
+  export ROS_MASTER_URI=$network_ros_master_uri
+fi
 
 xhost +local:root
 docker run \

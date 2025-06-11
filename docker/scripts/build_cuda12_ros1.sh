@@ -108,7 +108,8 @@ RUN cd catkin_ws/src && \
     python -m pip install -e . && \
     cd .. && \
     python -m pip install -e . && \
-    pip install rospkg"
+    pip install rospkg && \
+    pip install pyrealsense2"
 
     
 # Build catkin workspace.
