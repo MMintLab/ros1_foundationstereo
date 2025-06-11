@@ -1,0 +1,40 @@
+# MMint FoundationStereo Configuration File
+# This file centralizes all configuration parameters for easy modification
+
+# Camera Configuration
+camera:
+  serial_no: "332322072406"  # Camera serial number for RealSense
+
+# Network Configuration
+network:
+  ros_hostname: "192.168.1.68"
+  ros_ip: "192.168.1.68"
+  ros_master_uri: "http://192.168.1.68:11311/"
+
+# ROS Topic Names
+topics:
+  stereo_left: "/camera/infra1/image_rect_raw"
+  stereo_right: "/camera/infra2/image_rect_raw"
+  fs_depth: "/foundation_stereo/depth_raw"
+  rs_depth: "/camera/aligned_depth_to_color/image_raw"
+  color: "/camera/color/image_raw"
+  pointcloud: "/foundation_stereo/pointcloud"
+
+# Frame Configuration
+frames:
+  pcd_frame: "panda_link0"  # Use "camera_color_optical_frame" if no extrinsics available
+
+# Extrinsics (transformation from world/robot to camera)
+# Format: [x, y, z, qx, qy, qz, qw] - translation + quaternion
+extrinsics:
+  values: [1.350150, 0.034663, 0.564698, 0.574423, 0.583133, -0.422241, -0.389494]
+
+# Processing Configuration
+processing:
+  scale: 1.0  # Scale factor for image processing
+  timer_duration: 0.5  # Processing timer duration in seconds
+
+# Docker Configuration
+docker:
+  image_name: "foundationstereo"
+  cuda_image: "cuda12_ros1" 
