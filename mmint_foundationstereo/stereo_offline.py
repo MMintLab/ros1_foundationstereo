@@ -49,6 +49,7 @@ class StereoDepthProcessor():
         self.extrinsics = np.linalg.inv(extrinsics)
 
         # camera_depth_optical_frame to panda_link0
+        
         self.extrinsics_wTc = create_transformation_matrix(extrinsics_wTc_vec[:3], extrinsics_wTc_vec[3:]) if extrinsics_wTc_vec is not None else None
         # Load camera intrinsics from file
         self.baseline = baseline
@@ -117,12 +118,12 @@ class StereoDepthProcessor():
         }
         depth = depth_intrinsic_scaled["fx"] * self.baseline / (disp)
         depth = denoise_depth_with_sobel2(depth)
+        aligned_depth = align_depth_to_color(depth, depth_intrinsic_scaled, self.color_intrinsic, self.extrinsics)
 
         
         # Align depth to color if color image is provided
         pointcloud = None
         if image_color is not None:
-            aligned_depth = align_depth_to_color(depth, depth_intrinsic_scaled, self.color_intrinsic, self.extrinsics)
 
             H, W = aligned_depth.shape
             fx_c, fy_c, cx_c, cy_c = self.color_intrinsic['fx'], self.color_intrinsic['fy'], self.color_intrinsic['cx'], self.color_intrinsic['cy']
@@ -140,7 +141,6 @@ class StereoDepthProcessor():
             colors = cv2.resize(image_color, None, fx=scale, fy=scale)
             colors = colors.reshape(-1, 3) / 255.0  # Normalize color values to [0,1]
             
-
             # if PCD_FRAME != "camera_color_optical_frame":
             if self.extrinsics_wTc is not None:
                 real_pcd_homo = np.hstack((points_3d_valid, np.ones((points_3d_valid.shape[0], 1))))
@@ -158,7 +158,7 @@ class StereoDepthProcessor():
             # # Convert packed RGB uint32 to float RGB values between 0 and 1       
             # pcd.colors = o3d.utility.Vector3dVector(colors)
             # o3d.visualization.draw_geometries([pcd])
-        return depth, pointcloud
+        return aligned_depth, pointcloud
 
 
 def main(args=None):
