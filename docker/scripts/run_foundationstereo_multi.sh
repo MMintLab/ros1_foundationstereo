@@ -23,7 +23,7 @@ docker run \
   -v $MMINT_FS_WORKSPACE_DIR/docker/config/terminator_config:/root/.config/terminator/config \
   -v /dev/bus/usb:/dev/bus/usb \
   $opts \
-  cuda12_ros1_multi \
+  foundationstereo_multi \
   bash -ci ' \
     if [ ! -z ${DISPLAY+x} ] && ( [ -z ${CONSOLE+x} ] || [ $CONSOLE == terminator ] ); then \
       ./mmint_foundationstereo/docker/scripts/start_foundationstereo_multi_terminator.sh; \

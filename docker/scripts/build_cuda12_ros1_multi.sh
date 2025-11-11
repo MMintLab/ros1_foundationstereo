@@ -59,18 +59,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 # Install foundation stereo env. 
 ARG CACHEBUST=$(date +%s)
 RUN echo "Cache bust: $CACHEBUST"   
-RUN cd catkin_ws/src && \
-    git clone https://github.com/MMintLab/ros1_foundationstereo.git && \
-    git checkout dev &&\
-    git pull &&\
-    cd ros1_foundationstereo && \
-    git submodule update --init --recursive && \
-    cd FoundationStereo && \
-    /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
-    conda env create -f environment.yml && \
-    conda activate foundation_stereo && \
-    python -m pip install flash-attn"
-    
+
 # Build catkin workspace.
 RUN apt-get update && \
     cd ~/catkin_ws && \
@@ -78,40 +67,58 @@ RUN apt-get update && \
         catkin_make" && \
     rm -rf /var/lib/apt/lists/*
 
-# Build realsense SDK
+# Build realsense SDK - install dependencies
 RUN apt-get update && \
-    apt-get install -y gnupg2 lsb-release software-properties-common wget
-RUN sudo apt-get update && \
-    apt-get install -y autoconf automake libtool pkg-config libudev-dev
-    
-RUN mkdir -p /etc/apt/keyrings
-RUN curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null
-RUN apt-get install apt-transport-https
-
-## Add the RealSense repository
-RUN echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main" \
-    | tee /etc/apt/sources.list.d/librealsense.list
-
-## Update and install librealsense2-dkms / librealsense2-utils
-RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y \
-    librealsense2-dkms \
-    librealsense2-utils && \
+        gnupg2 \
+        lsb-release \
+        software-properties-common \
+        wget \
+        autoconf \
+        automake \
+        libtool \
+        pkg-config \
+        libudev-dev \
+        apt-transport-https \
+        ca-certificates \
+        cmake \
+        build-essential \
+        git && \
     rm -rf /var/lib/apt/lists/*
-    
-# Build librealsense2
-RUN cd ~/catkin_ws/src && \
-    git clone https://github.com/Microsoft/vcpkg.git && \
-    cd vcpkg && \
-    ./bootstrap-vcpkg.sh && \
-    ./vcpkg integrate install && \
-    ./vcpkg install realsense2
+
+## Build librealsense2 from source (more reliable than apt repo)
+RUN cd /tmp && \
+    git clone https://github.com/IntelRealSense/librealsense.git && \
+    cd librealsense && \
+    git checkout v2.54.2 && \
+    mkdir build && \
+    cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=false -DBUILD_GRAPHICAL_EXAMPLES=false && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd / && \
+    rm -rf /tmp/librealsense
 
 # ros realsense
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
 RUN apt-get update && \
     apt-get install ros-noetic-realsense2-camera -y
 
+RUN cd catkin_ws/src && \
+    git clone -b dev https://github.com/MMintLab/ros1_foundationstereo.git && \
+    cd ros1_foundationstereo && \
+    git submodule update --init --recursive && \
+    cd FoundationStereo && \
+    /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda env create -f environment.yml"
+
+RUN /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
+    conda run -n foundation_stereo python -m pip install flash-attn"
+    
+   
 RUN rm -r ~/catkin_ws/src/ros1_foundationstereo 
 
 # Optionally, set up the shell to activate the environment automatically.
