@@ -40,6 +40,13 @@ sys.path.insert(0, str(SCRIPT_DIR / "sam-3d-objects"))
 sys.path.insert(0, str(SCRIPT_DIR / "FoundationPose"))
 sys.path.insert(0, str(SCRIPT_DIR / "FoundationStereo"))
 
+# Optional: Add Any6D path if available (for sam2_instantmesh utilities)
+ANY6D_PATH = Path("/home/young/gum_ws/src/Any6D")
+if ANY6D_PATH.exists():
+    sys.path.insert(0, str(ANY6D_PATH))
+    sys.path.insert(0, str(ANY6D_PATH / "sam2"))
+    sys.path.insert(0, str(ANY6D_PATH / "instantmesh"))
+
 # Import from submodules after path setup
 from foundationperception.stereo import StereoDepthProcessor
 from foundationperception.utils import create_transformation_matrix

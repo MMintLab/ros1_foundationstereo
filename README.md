@@ -230,6 +230,24 @@ foundationperception/
 └── docker/                    # Docker support
 ```
 
+### Optional: Any6D Integration
+
+For additional mesh generation capabilities using InstantMesh and SAM2, you can optionally set up Any6D:
+
+```bash
+# Clone Any6D (contains sam2_instantmesh utilities)
+cd /path/to/workspace
+git clone <any6d-repo-url> Any6D
+
+# The video_to_objectpose.py script will automatically detect Any6D if available at:
+# /home/young/gum_ws/src/Any6D
+```
+
+Any6D provides:
+- `sam2_instantmesh.py`: SAM2 box-prompted segmentation + InstantMesh 3D reconstruction
+- `foundationpose/`: FoundationPose integration
+- `instantmesh/`: Multi-view diffusion + 3D mesh generation
+
 ## Configuration
 
 Camera parameters are stored in `assets/`:
