@@ -2,13 +2,25 @@
 
 A unified Python package for foundation model-based 6DoF object pose estimation from video using language prompts.
 
-## Features
+## Key Features
 
-- **Language-Prompted Pose Estimation**: Identify and track objects using natural language (e.g., "red cup", "cardboard box")
-- **FoundationStereo**: High-quality depth estimation from stereo infrared image pairs
-- **FoundationPose**: 6DoF object pose estimation and tracking from RGB-D images
-- **SAM3**: Segment Anything Model 3 for text-prompted image segmentation
-- **SAM3D**: Single-image 3D mesh generation (generates mesh if not provided)
+### 🎯 Object Pose Estimation with Language Prompts
+
+Estimate 6DoF object poses by simply describing the object in natural language:
+
+| Mode | Description |
+|------|-------------|
+| **Without Mesh** | Automatically generates 3D mesh from the first frame using SAM3D, then tracks pose |
+| **With Mesh** | Uses provided mesh file directly for pose estimation and tracking |
+
+Just provide a text prompt like `"red cup"` or `"cardboard box"` - no CAD models or manual annotation required!
+
+### 🔧 Modular Components
+
+- **SAM3**: Text-prompted image segmentation (Segment Anything Model 3)
+- **SAM3D**: Single-image 3D mesh generation from segmentation mask
+- **FoundationStereo**: High-quality depth estimation from stereo infrared pairs
+- **FoundationPose**: 6DoF pose estimation and tracking from RGB-D
 
 ## Installation
 
@@ -82,8 +94,9 @@ cd ..
 
 Extract 6DoF object poses from images using a text prompt:
 
-**With FoundationStereo** (computes depth from infrared stereo pairs):
+#### Without Mesh (Auto-generates mesh from first frame)
 ```bash
+# With FoundationStereo depth estimation
 python scripts/video_to_objectpose.py \
     --image_dir path/to/rgb_images \
     --prompt "red cup" \
@@ -92,10 +105,8 @@ python scripts/video_to_objectpose.py \
     --infra2_dir path/to/infra2 \
     --baseline 0.05 \
     --output output_dir
-```
 
-**With pre-computed depth**:
-```bash
+# With pre-computed depth
 python scripts/video_to_objectpose.py \
     --image_dir path/to/rgb_images \
     --prompt "cardboard box" \
@@ -103,7 +114,7 @@ python scripts/video_to_objectpose.py \
     --output output_dir
 ```
 
-**With existing mesh**:
+#### With Mesh (Use existing 3D model)
 ```bash
 python scripts/video_to_objectpose.py \
     --image_dir path/to/rgb_images \
