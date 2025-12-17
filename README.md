@@ -20,21 +20,25 @@ A unified Python package for foundation model-based 6DoF object pose estimation 
 ### Clone with Submodules
 
 ```bash
-git clone --recursive https://github.com/MMintLab/FoundationPerception.git
+git clone --recursive -b foundationperception https://github.com/MMintLab/FoundationPerception.git
 cd FoundationPerception
 
 # Or if already cloned:
+git checkout foundationperception
 git submodule update --init --recursive
 ```
 
 ### Create Conda Environment
 
 ```bash
-conda create -n foundationpose python=3.9
-conda activate foundationpose
+conda create -n foundationperception python=3.9
+conda activate foundationperception
 
 # Install PyTorch with CUDA support
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Install requirements
+pip install -r requirements.txt
 
 # Install core package
 pip install -e .
@@ -70,16 +74,6 @@ cd ..
 cd sam-3d-objects
 pip install -e .
 cd ..
-```
-
-### Additional Dependencies
-
-```bash
-# nvdiffrast (required by FoundationPose)
-pip install nvdiffrast
-
-# flash attention (optional, improves performance)
-pip install flash-attn --no-build-isolation
 ```
 
 ## Quick Start
@@ -161,6 +155,7 @@ foundationperception/
 ├── FoundationPose/             # Submodule
 ├── sam3/                       # Submodule
 ├── sam-3d-objects/             # Submodule
+├── requirements.txt
 ├── setup.py
 └── README.md
 ```
@@ -170,18 +165,6 @@ foundationperception/
 For ROS1 integration with real-time depth estimation, see the `ros1` branch:
 ```bash
 git checkout ros1
-```
-
-## Citation
-
-If you use this package, please cite the original papers:
-
-```bibtex
-@article{foundationpose2024,
-  title={FoundationPose: Unified 6D Pose Estimation and Tracking of Novel Objects},
-  author={Wen, Bowen and others},
-  year={2024}
-}
 ```
 
 ## License
