@@ -1,8 +1,0 @@
-flash-attn
-scikit-learn
-scipy
-open3d
-trimesh
-matplotlib
-numpy
-pandas

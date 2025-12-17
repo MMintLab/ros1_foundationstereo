@@ -1,7 +1,12 @@
+"""
+Utility functions for foundationperception package.
+
+Provides depth processing, coordinate transforms, and image alignment utilities.
+"""
+
 import numpy as np
 import cv2
 from scipy.signal import convolve2d
-from FoundationStereo.core.foundation_stereo import *
 
 def denoise_depth_with_sobel2(depth_image: np.ndarray, depth_gradient_threshold_m_per_pixel: float = 0.5) -> np.ndarray:
     """Denoise a depth image by zeroing pixels where the Sobel gradient magnitude exceeds a threshold using SciPy's convolve2d."""

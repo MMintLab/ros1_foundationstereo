@@ -1,3 +1,12 @@
 [submodule "FoundationStereo"]
 	path = FoundationStereo
 	url = https://github.com/MMintLab/FoundationStereo.git
+[submodule "sam3"]
+	path = sam3
+	url = https://github.com/facebookresearch/sam3.git
+[submodule "sam-3d-objects"]
+	path = sam-3d-objects
+	url = https://github.com/facebookresearch/sam-3d-objects.git
+[submodule "FoundationPose"]
+	path = FoundationPose
+	url = https://github.com/NVlabs/FoundationPose.git
