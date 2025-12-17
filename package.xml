@@ -3,28 +3,18 @@
   <name>foundationperception</name>
   <version>0.2.0</version>
   <description>
-    A unified package for foundation model-based perception including:
-    - FoundationStereo: Stereo depth estimation
-    - FoundationPose: 6DoF object pose estimation
-    - SAM3: Segment Anything Model 3
-    - SAM3D: 3D mesh generation from single images
+    Foundation model-based 6DoF object pose estimation from video using language prompts.
+    Combines FoundationStereo, FoundationPose, SAM3, and SAM3D.
   </description>
 
   <maintainer email="yswi@umich.edu">Youngsun Wi</maintainer>
-
   <license>MIT</license>
 
-  <url type="website">https://github.com/MMintLab/foundationperception</url>
-  <url type="repository">https://github.com/MMintLab/foundationperception</url>
+  <url type="website">https://github.com/MMintLab/FoundationPerception</url>
 
   <author email="ysunnysun56@gmail.com">Youngsun Wi</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-
-  <depend>rospy</depend>
-  <depend>std_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>geometry_msgs</depend>
 
   <export>
   </export>
