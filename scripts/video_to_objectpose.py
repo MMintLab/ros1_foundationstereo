@@ -620,12 +620,11 @@ def main():
             infra2_images = infra2_images[:min_frames]
             print(f"Using {min_frames} frames")
         
-        # Load depth intrinsic (use color intrinsic if not provided)
+        # Load depth intrinsic (default to color intrinsic, which is standard for RealSense)
         if args.depth_intrinsic and os.path.exists(args.depth_intrinsic):
             depth_intrinsic = np.loadtxt(args.depth_intrinsic)
         else:
-            print("Using color intrinsic for depth camera (provide --depth_intrinsic for accuracy)")
-            depth_intrinsic = intrinsic.copy()
+            depth_intrinsic = intrinsic.copy()  # Use color intrinsic as default
         
         # Load extrinsics (default to identity if not provided)
         if args.extrinsics and os.path.exists(args.extrinsics):
