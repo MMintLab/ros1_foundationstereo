@@ -6,12 +6,38 @@ This script processes video files (or image directories) to estimate 6DoF object
 using a text prompt to identify the target object. It combines:
 - SAM3 for text-prompted segmentation
 - SAM3D for mesh generation (if no mesh provided)
-- FoundationStereo for depth estimation (from stereo pairs)
+- FoundationStereo for depth estimation (from stereo infrared pairs)
 - FoundationPose for 6DoF pose estimation
 
+Depth can be obtained either from:
+1. FoundationStereo (--foundationstereo): Computes depth from infrared stereo pairs
+2. Pre-computed depth images (--depth_dir): Uses existing depth .npy files
+
 Usage:
-    python video_to_objectpose.py --video path/to/video.mp4 --prompt "red cup" --output output_dir
-    python video_to_objectpose.py --image_dir path/to/images --prompt "box" --mesh path/to/mesh.obj
+    # With FoundationStereo (infrared stereo -> depth)
+    python video_to_objectpose.py \\
+        --image_dir path/to/rgb_images \\
+        --prompt "red cup" \\
+        --foundationstereo \\
+        --infra1_dir path/to/infra1 \\
+        --infra2_dir path/to/infra2 \\
+        --baseline 0.05 \\
+        --output output_dir
+
+    # With pre-computed depth images
+    python video_to_objectpose.py \\
+        --image_dir path/to/rgb_images \\
+        --prompt "box" \\
+        --depth_dir path/to/depth \\
+        --mesh path/to/mesh.obj \\
+        --output output_dir
+    
+    # From video with depth
+    python video_to_objectpose.py \\
+        --video path/to/video.mp4 \\
+        --prompt "red cup" \\
+        --depth_dir path/to/depth \\
+        --output output_dir
 """
 
 # CRITICAL: Set environment variables BEFORE any imports
@@ -39,13 +65,6 @@ sys.path.insert(0, str(SCRIPT_DIR / "sam3"))
 sys.path.insert(0, str(SCRIPT_DIR / "sam-3d-objects"))
 sys.path.insert(0, str(SCRIPT_DIR / "FoundationPose"))
 sys.path.insert(0, str(SCRIPT_DIR / "FoundationStereo"))
-
-# Optional: Add Any6D path if available (for sam2_instantmesh utilities)
-ANY6D_PATH = Path("/home/young/gum_ws/src/Any6D")
-if ANY6D_PATH.exists():
-    sys.path.insert(0, str(ANY6D_PATH))
-    sys.path.insert(0, str(ANY6D_PATH / "sam2"))
-    sys.path.insert(0, str(ANY6D_PATH / "instantmesh"))
 
 # Import from submodules after path setup
 from foundationperception.stereo import StereoDepthProcessor
@@ -307,6 +326,9 @@ def process_video(
     text_prompt: str,
     intrinsic: np.ndarray,
     depth_images: List[np.ndarray] = None,
+    infra1_images: List[np.ndarray] = None,
+    infra2_images: List[np.ndarray] = None,
+    stereo_processor: 'StereoDepthProcessor' = None,
     mesh_path: str = None,
     output_dir: Path = None,
     device_sam: torch.device = None,
@@ -320,6 +342,9 @@ def process_video(
         text_prompt: Text description of object to track
         intrinsic: Camera intrinsic matrix (3x3)
         depth_images: Optional list of depth images (same length as frames)
+        infra1_images: Optional list of left infrared images (for FoundationStereo)
+        infra2_images: Optional list of right infrared images (for FoundationStereo)
+        stereo_processor: Optional StereoDepthProcessor instance (for FoundationStereo)
         mesh_path: Optional path to object mesh (will generate if not provided)
         output_dir: Output directory for results
         device_sam: Device for SAM3 model
@@ -388,13 +413,33 @@ def process_video(
         
         masks.append(mask)
         
-        # Get depth (use provided or estimate)
-        if depth_images is not None:
+        # Get depth: FoundationStereo > pre-computed depth > error
+        if stereo_processor is not None and infra1_images is not None and infra2_images is not None:
+            # Use FoundationStereo to compute depth from infrared stereo pair
+            infra1 = infra1_images[i]
+            infra2 = infra2_images[i]
+            
+            # Convert to grayscale if needed
+            if len(infra1.shape) == 3:
+                infra1 = infra1[..., 0]
+            if len(infra2.shape) == 3:
+                infra2 = infra2[..., 0]
+            
+            depth, _ = stereo_processor.process_images(infra1, infra2, frame)
+            depth = depth.astype(np.float32)
+            
+            # Save computed depth
+            depth_output_dir = output_dir / "depth"
+            depth_output_dir.mkdir(parents=True, exist_ok=True)
+            np.save(depth_output_dir / f'{i:06d}.npy', depth)
+        elif depth_images is not None:
+            # Use pre-computed depth images
             depth = depth_images[i]
         else:
-            # Use a simple depth estimate or require depth input
-            print(f"Warning: No depth for frame {i}, using placeholder")
-            depth = np.ones_like(mask, dtype=np.float32) * 0.5  # Placeholder
+            raise ValueError(
+                "No depth source provided. Either use --foundationstereo with "
+                "--infra1_dir and --infra2_dir, or provide --depth_dir"
+            )
         
         # Clear memory before pose estimation
         gc.collect()
@@ -479,7 +524,33 @@ def main():
     )
     parser.add_argument(
         "--depth_dir", type=str, default=None,
-        help="Path to directory containing depth images (optional)"
+        help="Path to directory containing pre-computed depth images (.npy files)"
+    )
+    
+    # FoundationStereo arguments
+    parser.add_argument(
+        "--foundationstereo", action="store_true",
+        help="Use FoundationStereo to compute depth from infrared stereo pairs"
+    )
+    parser.add_argument(
+        "--infra1_dir", type=str, default=None,
+        help="Path to directory containing left infrared images (required if --foundationstereo)"
+    )
+    parser.add_argument(
+        "--infra2_dir", type=str, default=None,
+        help="Path to directory containing right infrared images (required if --foundationstereo)"
+    )
+    parser.add_argument(
+        "--depth_intrinsic", type=str, default=None,
+        help="Path to depth camera intrinsic matrix file (for FoundationStereo)"
+    )
+    parser.add_argument(
+        "--extrinsics", type=str, default=None,
+        help="Path to extrinsics file [tx,ty,tz,qx,qy,qz,qw] (for FoundationStereo)"
+    )
+    parser.add_argument(
+        "--baseline", type=float, default=0.05,
+        help="Stereo baseline in meters (default: 0.05)"
     )
     
     args = parser.parse_args()
@@ -487,6 +558,14 @@ def main():
     # Validate input
     if args.video is None and args.image_dir is None:
         parser.error("Must provide either --video or --image_dir")
+    
+    # Validate depth source
+    if not args.foundationstereo and args.depth_dir is None:
+        parser.error("Must provide either --foundationstereo (with --infra1_dir, --infra2_dir) or --depth_dir")
+    
+    if args.foundationstereo:
+        if args.infra1_dir is None or args.infra2_dir is None:
+            parser.error("--foundationstereo requires --infra1_dir and --infra2_dir")
     
     # Load frames
     if args.video:
@@ -514,9 +593,59 @@ def main():
     
     print(f"Camera intrinsic:\n{intrinsic}")
     
-    # Load depth images if provided
+    # Initialize variables for depth processing
     depth_images = None
-    if args.depth_dir and os.path.exists(args.depth_dir):
+    infra1_images = None
+    infra2_images = None
+    stereo_processor = None
+    
+    if args.foundationstereo:
+        # Load infrared images for FoundationStereo
+        print(f"Loading infrared images for FoundationStereo...")
+        infra1_images = load_image_sequence(args.infra1_dir)
+        infra2_images = load_image_sequence(args.infra2_dir)
+        
+        if args.max_frames:
+            infra1_images = infra1_images[:args.max_frames]
+            infra2_images = infra2_images[:args.max_frames]
+        
+        print(f"Loaded {len(infra1_images)} infra1 and {len(infra2_images)} infra2 images")
+        
+        # Validate frame counts match
+        if len(infra1_images) != len(frames) or len(infra2_images) != len(frames):
+            print(f"Warning: Frame count mismatch - RGB: {len(frames)}, infra1: {len(infra1_images)}, infra2: {len(infra2_images)}")
+            min_frames = min(len(frames), len(infra1_images), len(infra2_images))
+            frames = frames[:min_frames]
+            infra1_images = infra1_images[:min_frames]
+            infra2_images = infra2_images[:min_frames]
+            print(f"Using {min_frames} frames")
+        
+        # Load depth intrinsic (use color intrinsic if not provided)
+        if args.depth_intrinsic and os.path.exists(args.depth_intrinsic):
+            depth_intrinsic = np.loadtxt(args.depth_intrinsic)
+        else:
+            print("Using color intrinsic for depth camera (provide --depth_intrinsic for accuracy)")
+            depth_intrinsic = intrinsic.copy()
+        
+        # Load extrinsics (default to identity if not provided)
+        if args.extrinsics and os.path.exists(args.extrinsics):
+            extrinsics_vec = np.loadtxt(args.extrinsics)
+        else:
+            print("Using default extrinsics [0,0,0,0,0,0,1] (provide --extrinsics for accuracy)")
+            extrinsics_vec = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+        
+        # Initialize FoundationStereo processor
+        print("Initializing FoundationStereo processor...")
+        stereo_processor = StereoDepthProcessor(
+            color_intrinsic=intrinsic,
+            depth_intrinsic=depth_intrinsic,
+            extrinsics_vec=extrinsics_vec,
+            baseline=args.baseline,
+        )
+        print("FoundationStereo initialized")
+        
+    elif args.depth_dir and os.path.exists(args.depth_dir):
+        # Load pre-computed depth images
         print(f"Loading depth images from: {args.depth_dir}")
         depth_dir = Path(args.depth_dir)
         depth_files = sorted(depth_dir.glob("*.npy"))
@@ -530,6 +659,9 @@ def main():
         text_prompt=args.prompt,
         intrinsic=intrinsic,
         depth_images=depth_images,
+        infra1_images=infra1_images,
+        infra2_images=infra2_images,
+        stereo_processor=stereo_processor,
         mesh_path=args.mesh,
         output_dir=output_dir,
     )
