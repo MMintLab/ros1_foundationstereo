@@ -18,7 +18,6 @@ docker run \
   --gpus all \
   --net host \
   --privileged \
-  -v $MMINT_FS_WORKSPACE_DIR:/root/gum_ws \
   -v $MMINT_FS_WORKSPACE_DIR:/root/mmint_foundationstereo \
   -v $MMINT_FS_WORKSPACE_DIR/docker/config/terminator_config:/root/.config/terminator/config \
   -v /dev/bus/usb:/dev/bus/usb \

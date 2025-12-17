@@ -20,16 +20,18 @@ from utils import *
 import threading
 import queue
 import time
-
-# Define the topic names
-ROSTOPIC_STEREO_LEFT = "/camera/infra1/image_rect_raw"
-ROSTOPIC_STEREO_RIGHT = "/camera/infra2/image_rect_raw"
-ROSTOPIC_FS_DEPTH = "/foundation_stereo/depth_raw"
-ROSTOPIC_RS_DEPTH = "/camera/aligned_depth_to_color/image_raw"
-ROSTOPIC_COLOR = "/camera/color/image_raw"
-ROSTOPIC_POINTCLOUD = "/foundation_stereo/pointcloud"
-BASE_ASSETS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
-PCD_FRAME = 'panda_link0' #"camera_color_optical_frame"
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets"))
+from config import (
+    ROSTOPIC_STEREO_LEFT,
+    ROSTOPIC_STEREO_RIGHT,
+    ROSTOPIC_FS_DEPTH,
+    ROSTOPIC_RS_DEPTH,
+    ROSTOPIC_COLOR,
+    ROSTOPIC_POINTCLOUD,
+    BASE_ASSETS_PATH,
+    PCD_FRAME
+)
 
 # Global model instance
 def init_model():

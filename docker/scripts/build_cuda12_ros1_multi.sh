@@ -10,6 +10,7 @@ RUN apt-get update && \
         python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
+
 # Install ROS Noetic.
 RUN apt-get update && \
     apt-get install -y \
@@ -115,13 +116,27 @@ RUN cd catkin_ws/src && \
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
     conda env create -f environment.yml"
 
+# Build flash-attn from source to avoid GLIBC compatibility issues
+# Uninstall first in case it was installed via environment.yml, then build from source
 RUN /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
-    conda run -n foundation_stereo python -m pip install flash-attn"
+    conda run -n foundation_stereo python -m pip uninstall -y flash-attn || true && \
+    MAX_JOBS=4 conda run -n foundation_stereo python -m pip install flash-attn --no-build-isolation"
+
+RUN /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
+    conda run -n foundation_stereo python -m pip install rospkg"
+
+# Clear torch hub cache to force fresh download of dinov2
+RUN rm -rf /root/.cache/torch/hub/facebookresearch_dinov2_main
+
+RUN cd ~/catkin_ws/src/ros1_foundationstereo && \
+    /bin/bash -c "source /opt/conda/etc/profile.d/conda.sh && \
+    conda run -n foundation_stereo pip install -e . &&\
+    cd ~/catkin_ws/src/ros1_foundationstereo/FoundationStereo && \
+    conda run -n foundation_stereo python -m pip install -e ."
     
    
-RUN rm -r ~/catkin_ws/src/ros1_foundationstereo 
-
 # Optionally, set up the shell to activate the environment automatically.
 RUN echo "source /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
 RUN echo "conda activate foundation_stereo" >> ~/.bashrc
-RUN echo "source /root/catkin_ws/devel/setup.bash" >> ~/.bashrc
+RUN echo "source /root/catkin_ws/devel/setup.bash" >> ~/.bashrc 
+
